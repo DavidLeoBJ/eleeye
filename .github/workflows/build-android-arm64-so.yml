@@ -16,7 +16,7 @@ jobs:
     - name: Set up NDK
       uses: ncilover/setup-ndk@v1
       with:
-        ndk-version: r25c  # 还是你之前用的稳定版r25c，这个action认这个参数
+        ndk-version: r26b  # 还是你之前用的稳定版r25c，这个action认这个参数
 
     # ✅ 核心编译步骤：完全适配eleeye源码结构 + 你的so命名
     - name: Build SO
