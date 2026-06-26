@@ -1,0 +1,46 @@
+name: Build Xiangqi-Eye Android ARM64 SO
+# 用途：编译适用于Android arm64-v8a架构的libxiangqi-eye.so动态库，用于JNI调用
+on:
+  push:
+    branches: [ master ]  # 推送master分支自动触发编译
+  workflow_dispatch:     # 支持手动触发编译，不用等push
+
+jobs:
+  build-so:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 象眼(ElephantEye)官方源码
+        uses: actions/checkout@v4
+        with:
+          repository: xqbase/eleeye  # ✅ 正牌象眼仓库，之前xiangqi-eye是404的错误地址
+          fetch-depth: 1             # 只拉最新代码，加快速度
+          ref: master                # 锁定master分支，eleeye只有这个活跃分支
+
+      - name: 配置Android NDK
+        uses: android-actions/setup-android@v3
+        with:
+          ndk-version: r25c          # 稳定的NDK版本，兼容性好
+          add-to-path: true          # 自动把NDK工具链加入PATH
+
+      - name: 编译ARM64动态库(libxiangqi-eye.so)
+        run: |
+          cd src
+          ${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++ \
+            -std=c++17 \                                  # 指定C++标准，兼容象眼源码
+            -O3 -DNDEBUG \                                # 开启最高优化，关闭调试信息
+            -fPIC -shared \                               # ✅ 关键：生成位置无关的动态链接库（SO）
+            -I${ANDROID_NDK_HOME}/sysroot/usr/include \   # ✅ JNI头文件路径，避免找不到jni.h
+            -I${ANDROID_NDK_HOME}/sysroot/usr/include/android \
+            -o libxiangqi-eye.so \                        # ✅ SO命名必须符合libxxx.so规则，JNI加载认这个名字
+            # ✅ 必须包含JNI胶水文件，否则SO内无Java可调的native函数
+            xiangqi_jni.cpp \
+            # 象眼原生源码文件，顺序不影响编译
+            main.cpp movegen.cpp search.cpp eval.cpp \
+            -pthread                                      # 多线程支持，象眼搜索需要
+
+      - name: 上传编译产物(SO文件)
+        uses: actions/upload-artifact@v4
+        with:
+          name: xiangqi-eye-android-arm64-so  # 产物名称清晰，下载时一眼识别
+          path: src/libxiangqi-eye.so         # 对应编译输出的SO路径
+          retention-days: 90                  # 产物保留90天，足够下载使用
