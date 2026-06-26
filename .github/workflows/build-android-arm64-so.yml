@@ -11,17 +11,24 @@ jobs:
         fetch-depth: 1
         ref: master
 
-    # ✅ 第一步：全局搜文件，不管藏哪、大小写写错没，都能揪出来
-    - name: 定位xiangqi_jni.cpp
+    # ✅ 第一步：根目录全局搜，绝不搞错路径（重点搜你提过的test_jni.cpp）
+    - name: 全局定位胶水文件
       run: |
-        echo "=== 整个仓库找xiangqi_jni.cpp（含大小写容错）==="
-        find . -name "xiangqi_jni.cpp" -o -name "Xiangqi_jni.cpp" -o -name "XIANGQI_JNI.cpp"
-        echo "=== 根目录文件 ==="
+        echo "=== 全盘搜索所有可能的胶水文件 ==="
+        echo "1. 搜xiangqi_jni.cpp（含大小写）："
+        find . -iname "xiangqi_jni.cpp"
+        echo "2. 搜你之前提过的test_jni.cpp："
+        find . -iname "test_jni.cpp"
+        echo "3. 搜所有JNI相关cpp："
+        find . -iname "*jni*.cpp"
+        echo "4. 搜所有engine/chess相关cpp："
+        find . -iname "*engine*.cpp" -o -iname "*chess*.cpp"
+        echo "=== 确认base目录的pipe.cpp（这个我们已经对过了） ==="
+        ls -l base/pipe.cpp
+        echo "=== 根目录所有文件 ==="
         ls -la
-        echo "=== eleeye目录文件 ==="
+        echo "=== eleeye目录所有文件 ==="
         ls -la eleeye/
-        echo "=== base目录文件 ==="
-        ls -la base/
 
     - name: Use Preinstalled NDK
       run: |
@@ -32,13 +39,14 @@ jobs:
 
     - name: Build SO
       run: |
+        # 👇 等上面定位步骤的日志出来，把这里的路径改成实际找到的胶水文件路径
+        # 比如日志显示./test_jni.cpp → 填"test_jni.cpp"
+        # 比如日志显示./eleeye/xiangqi_jni.cpp → 填"eleeye/xiangqi_jni.cpp"
+        JNI_PATH="test_jni.cpp"  # 先默认填你最早提的test_jni.cpp，不对再改
+        
         cd eleeye
-        # 👇 看上面「定位」步骤的日志，改这个路径就行：
-        # 如果日志显示文件在根目录：用 ../xiangqi_jni.cpp
-        # 如果日志显示文件在eleeye目录：用 xiangqi_jni.cpp
-        TARGET_JNI="../xiangqi_jni.cpp"  
-        echo "=== 确认胶水文件 ==="
-        ls -l $TARGET_JNI
+        echo "=== 确认胶水文件（路径：$JNI_PATH） ==="
+        ls -l ../$JNI_PATH  # cd eleeye后，根目录文件要加../
         echo "=== 确认pipe.cpp ==="
         ls -l ../base/pipe.cpp
         echo "=== 开始编译 ==="
@@ -51,7 +59,7 @@ jobs:
           -I. \
           -I../base \
           -o libxiangyu_engine.so \
-          $TARGET_JNI \
+          ../$JNI_PATH \
           eleeye.cpp search.cpp evaluate.cpp genmoves.cpp position.cpp hash.cpp book.cpp movesort.cpp preeval.cpp \
           ../base/pipe.cpp \
           ucci.cpp pregen.cpp \
