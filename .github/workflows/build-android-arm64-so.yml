@@ -13,11 +13,10 @@ jobs:
         fetch-depth: 1
         ref: master
 
-    # ✅ NDK配置和Pikafish用的一样，稳定兼容
     - name: Set up NDK
-      uses: android-actions/setup-android@v3
+      uses: ncilover/setup-ndk@v1
       with:
-        ndk-version: r25c
+        ndk-version: r25c  # 还是你之前用的稳定版r25c，这个action认这个参数
 
     # ✅ 核心编译步骤：完全适配eleeye源码结构 + 你的so命名
     - name: Build SO
