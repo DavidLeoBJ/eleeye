@@ -5,81 +5,44 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
-    # ✅ 拉取eleeye源码，加超时防抖
     - uses: actions/checkout@v4
       with:
         repository: xqbase/eleeye
         fetch-depth: 1
         ref: master
-        timeout-minutes: 5
 
-    # ✅ 优先用runner预装NDK（零下载，完全免疫网络抖动）
-    - name: Setup NDK (抗抖动版)
-      run: |
-        echo "=== 查找预装NDK ==="
-        NDK_PATH=$(ls -d /usr/local/lib/android/sdk/ndk/* 2>/dev/null | head -1)
-        
-        # 预装NDK不存在才走下载兜底
-        if [ -z "$NDK_PATH" ]; then
-          echo "预装NDK未找到，启动下载兜底..."
-          for i in {1..3}; do
-            echo "第${i}次尝试下载NDK..."
-            # -c 断点续传，--tries=0无限重试，--waitretry=10秒间隔
-            wget -c --timeout=60 --tries=0 \
-              --retry-connrefused --waitretry=10 \
-              https://mirrors.tuna.tsinghua.edu.cn/android-ndk/android-ndk-r26b-linux.zip \
-              -O /tmp/ndk.zip && break
-            echo "下载失败，10秒后重试..."
-            sleep 10
-          done
-          
-          # 校验下载完整性
-          unzip -t /tmp/ndk.zip > /dev/null || { echo "NDK包损坏"; exit 1; }
-          unzip -q /tmp/ndk.zip -d $HOME
-          NDK_PATH=$HOME/android-ndk-r26b
-        fi
-        
-        echo "ANDROID_NDK_HOME=$NDK_PATH" >> $GITHUB_ENV
-        echo "NDK_HOME=$NDK_PATH" >> $GITHUB_ENV
-        echo "✅ NDK路径：$NDK_PATH"
-        # 验证编译器存在
-        ls $NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++
+    - name: Setup Android NDK
+      uses: nttld/setup-ndk@v1
+      with:
+        ndk-version: r26b
 
-    # ✅ 自动定位胶水文件，不用手动改路径
     - name: Build SO
       run: |
         cd eleeye
-        echo "=== 自动查找胶水文件 ==="
-        # 找eleeye目录下的jni相关cpp（你之前确认的xiangqi_jni.cpp就在这）
-        JNI_FILE=$(find . -maxdepth 1 -iname "*jni*.cpp" | head -1)
-        if [ -z "$JNI_FILE" ]; then
-          echo "❌ 未找到胶水文件！"
-          exit 1
-        fi
-        echo "✅ 胶水文件：$JNI_FILE"
         
-        echo "=== 验证依赖文件 ==="
-        ls -l $JNI_FILE
-        ls -l ../base/pipe.cpp
+        # 1. 再次确认文件存在（这一步是为了让你在日志里安心）
+        echo "=== 确认胶水文件存在 ==="
+        ls -l xiangqi_jni.cpp
         
+        # 2. 开始编译
         echo "=== 开始编译 ==="
-        ${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++ \
+        $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++ \
           -std=c++17 \
           -O3 -DNDEBUG \
           -fPIC -shared \
-          -I${ANDROID_NDK_HOME}/sysroot/usr/include \
-          -I${ANDROID_NDK_HOME}/sysroot/usr/include/android \
+          -I$ANDROID_NDK_HOME/sysroot/usr/include \
+          -I$ANDROID_NDK_HOME/sysroot/usr/include/android \
           -I. \
           -I../base \
           -o libxiangyu_engine.so \
-          $JNI_FILE \
+          xiangqi_jni.cpp \
           eleeye.cpp search.cpp evaluate.cpp genmoves.cpp position.cpp hash.cpp book.cpp movesort.cpp preeval.cpp \
           ../base/pipe.cpp \
-          ucci.cpp pregen.cpp \
-          -pthread
-        echo "✅ 编译完成，SO文件大小：$(du -h libxiangyu_engine.so)"
+          ucci.cpp pregen.cpp
+        
+        echo "✅ 编译成功！生成的文件大小："
+        du -h libxiangyu_engine.so
 
-    # ✅ 上传产物，保留90天
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
