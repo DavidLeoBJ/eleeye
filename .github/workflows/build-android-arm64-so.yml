@@ -11,19 +11,26 @@ jobs:
         fetch-depth: 1
         ref: master
 
-    - name: Set up NDK r26b (清华镜像，直链无验证)
+    # ✅ 直接用 runner 预装的 NDK，零下载、零权限问题、零403
+    - name: Use Preinstalled NDK
       run: |
-        rm -f /tmp/ndk.zip
-        wget -q https://mirrors.tuna.tsinghua.edu.cn/android-ndk/android-ndk-r26b-linux.zip -O /tmp/ndk.zip
-        unzip -q /tmp/ndk.zip -d $HOME
-        echo "ANDROID_NDK_HOME=$HOME/android-ndk-r26b" >> $GITHUB_ENV
-        echo "NDK_HOME=$HOME/android-ndk-r26b" >> $GITHUB_ENV
-        
-    - name: Build SO (调试版)
+        NDK_PATH=$(ls -d /usr/local/lib/android/sdk/ndk/* 2>/dev/null | head -1)
+        if [ -z "$NDK_PATH" ]; then
+          echo "预装NDK不存在，用 fallback 版本"
+          # 万一中招的fallback，用谷歌官方直链（不加验证的）
+          wget -q --no-check-certificate https://dl.google.com/android/repository/android-ndk-r26b-linux.zip -O /tmp/ndk.zip
+          unzip -q /tmp/ndk.zip -d $HOME
+          NDK_PATH=$HOME/android-ndk-r26b
+        fi
+        echo "ANDROID_NDK_HOME=$NDK_PATH" >> $GITHUB_ENV
+        echo "NDK_HOME=$NDK_PATH" >> $GITHUB_ENV
+        echo "✅ 找到NDK路径：$NDK_PATH"
+        # 验证编译器存在
+        ls $NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++
+
+    - name: Build SO
       run: |
         cd eleeye
-        echo "=== eleeye目录下的所有cpp文件 ==="
-        ls *.cpp
         echo "=== 开始编译 ==="
         ${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++ \
           -std=c++17 \
