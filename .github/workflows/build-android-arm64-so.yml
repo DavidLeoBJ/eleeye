@@ -11,6 +11,18 @@ jobs:
         fetch-depth: 1
         ref: master
 
+    # ✅ 第一步：全局搜文件，不管藏哪、大小写写错没，都能揪出来
+    - name: 定位xiangqi_jni.cpp
+      run: |
+        echo "=== 整个仓库找xiangqi_jni.cpp（含大小写容错）==="
+        find . -name "xiangqi_jni.cpp" -o -name "Xiangqi_jni.cpp" -o -name "XIANGQI_JNI.cpp"
+        echo "=== 根目录文件 ==="
+        ls -la
+        echo "=== eleeye目录文件 ==="
+        ls -la eleeye/
+        echo "=== base目录文件 ==="
+        ls -la base/
+
     - name: Use Preinstalled NDK
       run: |
         NDK_PATH=$(ls -d /usr/local/lib/android/sdk/ndk/* 2>/dev/null | head -1)
@@ -21,32 +33,30 @@ jobs:
     - name: Build SO
       run: |
         cd eleeye
-        echo "=== 确认文件都在 ==="
-        
-        # 1. 确认当前目录(eleeye)下有 xiangqi_jni.cpp
-        ls -l xiangqi_jni.cpp
-        
-        # 2. 确认上一级目录(base)下有 pipe.cpp
+        # 👇 看上面「定位」步骤的日志，改这个路径就行：
+        # 如果日志显示文件在根目录：用 ../xiangqi_jni.cpp
+        # 如果日志显示文件在eleeye目录：用 xiangqi_jni.cpp
+        TARGET_JNI="../xiangqi_jni.cpp"  
+        echo "=== 确认胶水文件 ==="
+        ls -l $TARGET_JNI
+        echo "=== 确认pipe.cpp ==="
         ls -l ../base/pipe.cpp
-        
         echo "=== 开始编译 ==="
-        
-        # 核心编译命令
         ${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++ \
           -std=c++17 \
           -O3 -DNDEBUG \
           -fPIC -shared \
           -I${ANDROID_NDK_HOME}/sysroot/usr/include \
           -I${ANDROID_NDK_HOME}/sysroot/usr/include/android \
-          -I. \           # ✅ 告诉编译器在当前目录(eleeye)找头文件
-          -I../base \      # ✅ 告诉编译器在上一级目录(base)找头文件
+          -I. \
+          -I../base \
           -o libxiangyu_engine.so \
-          xiangqi_jni.cpp \   # ✅ 当前目录的文件，直接写名字
+          $TARGET_JNI \
           eleeye.cpp search.cpp evaluate.cpp genmoves.cpp position.cpp hash.cpp book.cpp movesort.cpp preeval.cpp \
-          ../base/pipe.cpp \  # ✅ 上一级目录的文件，加上 ../
+          ../base/pipe.cpp \
           ucci.cpp pregen.cpp \
           -pthread
-          
+
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
