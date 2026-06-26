@@ -11,17 +11,22 @@ jobs:
         fetch-depth: 1
         ref: master
 
-    # ✅ 手动装 NDK，零第三方 action 依赖
-    - name: Set up NDK r26b
+    - name: Set up NDK r26b (中科大镜像+校验)
       run: |
-        wget -q https://mirrors.tuna.tsinghua.edu.cn/android-ndk/android-ndk-r26b-linux.zip -O /tmp/ndk.zip
+        rm -f /tmp/ndk.zip
+        wget https://mirrors.ustc.edu.cn/android-ndk/android-ndk-r26b-linux.zip -O /tmp/ndk.zip
+        unzip -t /tmp/ndk.zip > /dev/null || { echo "NDK包损坏"; exit 1; }
         unzip -q /tmp/ndk.zip -d $HOME
         echo "ANDROID_NDK_HOME=$HOME/android-ndk-r26b" >> $GITHUB_ENV
         echo "NDK_HOME=$HOME/android-ndk-r26b" >> $GITHUB_ENV
+        echo "NDK路径验证：$(ls $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++)"
 
-    - name: Build SO
+    - name: Build SO (调试版)
       run: |
         cd eleeye
+        echo "=== eleeye目录下的所有cpp文件 ==="
+        ls *.cpp
+        echo "=== 开始编译 ==="
         ${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++ \
           -std=c++17 \
           -O3 -DNDEBUG \
