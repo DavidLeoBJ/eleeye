@@ -9,9 +9,8 @@ jobs:
       with:
         repository: xqbase/eleeye
         fetch-depth: 1
-        ref: master  # 要是拉不到代码就改成ref: main
+        ref: master
 
-    # ✅ 用runner预装NDK，零下载坑
     - name: Use Preinstalled NDK
       run: |
         NDK_PATH=$(ls -d /usr/local/lib/android/sdk/ndk/* 2>/dev/null | head -1)
@@ -22,22 +21,32 @@ jobs:
     - name: Build SO
       run: |
         cd eleeye
-        # 先确认文件都在，避免路径错
-        echo "=== 确认依赖文件位置 ==="
-        ls -l xiangqi_jni.cpp ../base/pipe.cpp
+        echo "=== 确认文件都在 ==="
+        
+        # 1. 确认当前目录(eleeye)下有 xiangqi_jni.cpp
+        ls -l xiangqi_jni.cpp
+        
+        # 2. 确认上一级目录(base)下有 pipe.cpp
+        ls -l ../base/pipe.cpp
+        
         echo "=== 开始编译 ==="
+        
+        # 核心编译命令
         ${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++ \
           -std=c++17 \
           -O3 -DNDEBUG \
           -fPIC -shared \
           -I${ANDROID_NDK_HOME}/sysroot/usr/include \
           -I${ANDROID_NDK_HOME}/sysroot/usr/include/android \
-          -I../base \  # 告诉编译器去base目录找头文件
+          -I. \           # ✅ 告诉编译器在当前目录(eleeye)找头文件
+          -I../base \      # ✅ 告诉编译器在上一级目录(base)找头文件
           -o libxiangyu_engine.so \
-          xiangqi_jni.cpp \
-          eleeye.cpp search.cpp evaluate.cpp genmoves.cpp position.cpp hash.cpp book.cpp movesort.cpp preeval.cpp ../base/pipe.cpp ucci.cpp pregen.cpp \
+          xiangqi_jni.cpp \   # ✅ 当前目录的文件，直接写名字
+          eleeye.cpp search.cpp evaluate.cpp genmoves.cpp position.cpp hash.cpp book.cpp movesort.cpp preeval.cpp \
+          ../base/pipe.cpp \  # ✅ 上一级目录的文件，加上 ../
+          ucci.cpp pregen.cpp \
           -pthread
-
+          
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
