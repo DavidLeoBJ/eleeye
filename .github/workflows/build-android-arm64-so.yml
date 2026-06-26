@@ -9,28 +9,22 @@ jobs:
       with:
         repository: xqbase/eleeye
         fetch-depth: 1
-        ref: master
+        ref: master  # 要是拉不到代码就改成ref: main
 
-    # ✅ 直接用 runner 预装的 NDK，零下载、零权限问题、零403
+    # ✅ 用runner预装NDK，零下载坑
     - name: Use Preinstalled NDK
       run: |
         NDK_PATH=$(ls -d /usr/local/lib/android/sdk/ndk/* 2>/dev/null | head -1)
-        if [ -z "$NDK_PATH" ]; then
-          echo "预装NDK不存在，用 fallback 版本"
-          # 万一中招的fallback，用谷歌官方直链（不加验证的）
-          wget -q --no-check-certificate https://dl.google.com/android/repository/android-ndk-r26b-linux.zip -O /tmp/ndk.zip
-          unzip -q /tmp/ndk.zip -d $HOME
-          NDK_PATH=$HOME/android-ndk-r26b
-        fi
         echo "ANDROID_NDK_HOME=$NDK_PATH" >> $GITHUB_ENV
         echo "NDK_HOME=$NDK_PATH" >> $GITHUB_ENV
         echo "✅ 找到NDK路径：$NDK_PATH"
-        # 验证编译器存在
-        ls $NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++
 
     - name: Build SO
       run: |
         cd eleeye
+        # 先确认文件都在，避免路径错
+        echo "=== 确认依赖文件位置 ==="
+        ls -l xiangqi_jni.cpp ../base/pipe.cpp
         echo "=== 开始编译 ==="
         ${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++ \
           -std=c++17 \
@@ -38,9 +32,10 @@ jobs:
           -fPIC -shared \
           -I${ANDROID_NDK_HOME}/sysroot/usr/include \
           -I${ANDROID_NDK_HOME}/sysroot/usr/include/android \
+          -I../base \  # 告诉编译器去base目录找头文件
           -o libxiangyu_engine.so \
           xiangqi_jni.cpp \
-          eleeye.cpp search.cpp evaluate.cpp genmoves.cpp position.cpp hash.cpp book.cpp movesort.cpp preeval.cpp pipe.cpp ucci.cpp pregen.cpp \
+          eleeye.cpp search.cpp evaluate.cpp genmoves.cpp position.cpp hash.cpp book.cpp movesort.cpp preeval.cpp ../base/pipe.cpp ucci.cpp pregen.cpp \
           -pthread
 
     - name: Upload Artifact
