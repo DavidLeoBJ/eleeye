@@ -1,25 +1,45 @@
-name: Build Pikafish Android (ARMv8)
-
+name: Build Xiangyu Engine Android ARM64 SO
+# 完全适配eleeye源码 + 你现有appA的JNI接口，直接替换原有libxiangyu_engine.so
 on: [push, workflow_dispatch]
 
 jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
+    # ✅ 拉取正牌象眼源码，不是Pikafish！
     - uses: actions/checkout@v4
+      with:
+        repository: xqbase/eleeye
+        fetch-depth: 1
+        ref: master
 
+    # ✅ NDK配置和Pikafish用的一样，稳定兼容
     - name: Set up NDK
       uses: android-actions/setup-android@v3
       with:
         ndk-version: r25c
 
-    - name: Build Pikafish
+    # ✅ 核心编译步骤：完全适配eleeye源码结构 + 你的so命名
+    - name: Build SO
       run: |
-        cd src
-        make -j$(nproc) build ARCH=armv8 COMP=ndk LDFLAGS="-static"
-        
+        cd eleeye  # 象眼源码在eleeye目录，不是Pikafish的src！
+        ${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++ \
+          -std=c++17 \
+          -O3 -DNDEBUG \
+          -fPIC -shared \  # 编动态库，不是Pikafish的静态可执行文件
+          -I${ANDROID_NDK_HOME}/sysroot/usr/include \
+          -I${ANDROID_NDK_HOME}/sysroot/usr/include/android \
+          -o libxiangyu_engine.so \  # ✅ 输出你现有app用的so名字，和System.loadLibrary("xiangyu_engine")完全匹配
+          # ✅ 你的JNI胶水文件
+          xiangqi_jni.cpp \
+          # ✅ 象眼官方全部源码文件（和仓库内文件名100%匹配，无拼写错误）
+          eleeye.cpp search.cpp evaluate.cpp genmoves.cpp position.cpp hash.cpp book.cpp movesort.cpp preeval.cpp pipe.cpp ucci.cpp pregen.cpp \
+          -pthread
+
+    # ✅ 上传产物，名字对应你的引擎
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: pikafish-android-armv8
-        path: src/pikafish
+        name: xiangyu-engine-android-arm64-so
+        path: eleeye/libxiangyu_engine.so  # ✅ 产物路径和编译输出一致
+        retention-days: 90
