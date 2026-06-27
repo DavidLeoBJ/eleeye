@@ -53,8 +53,16 @@ static void DoSearch(const char *fenStr, int depth, char *result, int resultLen)
 
     int mv = Search.mvResult;
     if (mv > 0) {
-        char moveStr[8] = {0};
-        MoveToStr(mv, moveStr);   // 得到 "h2e2" 这种 ICCS 串
+        //char moveStr[8] = {0};
+        //MoveToStr(mv, moveStr);   // 得到 "h2e2" 这种 ICCS 串
+        uint32_t coord = MOVE_COORD(mv);
+        char moveStr[4];
+        memcpy(moveStr, &coord, 4);   // 把四个字符拷出来
+
+        int fx = moveStr[0] - 'a';
+        int fy = moveStr[1] - '0';
+        int tx = moveStr[2] - 'a';
+        int ty = moveStr[3] - '0';
 
         // ICCS -> 列(X), 行(Y)
         int fx = moveStr[0] - 'a';
