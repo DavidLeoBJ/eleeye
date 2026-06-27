@@ -1,46 +1,38 @@
-name: Build Xiangyu Engine Android ARM64 SO
-on: [push, workflow_dispatch]
+name: Build Eleeye Android ARM64 SO
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 1
-        ref: master
+      - uses: actions/checkout@v4
 
-    - name: Setup Android NDK
-      uses: nttld/setup-ndk@v1
-      with:
-        ndk-version: r26b
+      - name: Set up Android NDK
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r25c
 
-    - name: Build SO
-      run: |
-        cd eleeye
-        echo "=== 确认胶水文件 ==="
-        ls -l xiangqi_jni.cpp
-        echo "=== 开始编译 ==="
-        ${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++ \
-          -std=c++17 \
-          -O3 -DNDEBUG \
-          -DCCHESS_A3800 \
-          -fPIC -shared \
-          -I${ANDROID_NDK_HOME}/sysroot/usr/include \
-          -I${ANDROID_NDK_HOME}/sysroot/usr/include/android \
-          -I. \
-          -I../base \
-          -o libeleeye_engine.so \
-          xiangqi_jni.cpp \
-          search.cpp evaluate.cpp genmoves.cpp position.cpp hash.cpp book.cpp movesort.cpp preeval.cpp \
-          ../base/pipe.cpp \
-          ucci.cpp pregen.cpp \
-          -pthread
-        echo "✅ 编译完成，SO大小：$(du -h libeleeye_engine.so)"
+      - name: Build SO
+        run: |
+          cd eleeye
+          echo "=== 确认文件 ==="
+          ls -la xiangqi_jni.cpp
+          echo "=== 开始编译 ==="
+          $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++ \
+            -shared -static-libstdc++ \
+            -o libeleeye_engine.so \
+            xiangqi_jni.cpp \
+            pregen.cpp position.cpp genmoves.cpp search.cpp hash.cpp movesort.cpp evaluate.cpp preeval.cpp \
+            -I. -IPosition -ISearch
+          echo "=== 编译完成，SO大小：==="
+          du -h libeleeye_engine.so
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: eleeye-engine-android-arm64-so
-        path: eleeye/libeleeye_engine.so
-        retention-days: 90
+      - name: Upload SO
+        uses: actions/upload-artifact@v4
+        with:
+          name: eleeye-engine-android-arm64-so
+          path: eleeye/libeleeye_engine.so
