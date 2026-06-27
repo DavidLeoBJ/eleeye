@@ -27,9 +27,29 @@ static void MoveToStr(int mv, char *buf) {
 
 // 核心搜索逻辑（给 nativeSearch 和 nativeTestSearch 共用）
 static void DoSearch(const char *fenStr, int depth, char *result, int resultLen) {
-    Search.pos.FromFen(fenStr);
-
-    // 设置搜索参数
+    // ① 拆 FEN：只取棋盘部分，解析走子方
+    char fenCopy[256];
+    strncpy(fenCopy, fenStr, sizeof(fenCopy) - 1);
+    fenCopy[255] = '\0';
+    
+    char *boardPart = strtok(fenCopy, " ");
+    char *sideStr = strtok(NULL, " ");
+    
+    // ② 清盘 + 只解析棋盘部分
+    Search.pos.ClearBoard();
+    Search.pos.FromFen(boardPart);
+    
+    // ③ 设走子方（象眼里 0=红方，1=黑方，w 对应红方）
+    if (sideStr && sideStr[0] == 'w') {
+        Search.pos.sdPlayer = 0;
+    } else {
+        Search.pos.sdPlayer = 1;
+    }
+    
+    // ④ 预评估！这步是关键，初始化攻击表等内部结构
+    Search.pos.PreEvaluate();
+    
+    // ---- 以下是你原来的搜索参数设置，不动 ----
     Search.bQuit = false;
     Search.bPonder = false;
     Search.bDraw = false;
@@ -50,7 +70,6 @@ static void DoSearch(const char *fenStr, int depth, char *result, int resultLen)
     memset(Search.wmvBanList, 0, sizeof(Search.wmvBanList));
     Search.szBookFile[0] = '\0';
 
-    // 阻塞搜索，结果存入 Search.mvResult（因为定义了 CCHESS_A3800）
     SearchMain(depth);
 
     int mv = Search.mvResult;
