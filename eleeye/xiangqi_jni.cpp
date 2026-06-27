@@ -27,29 +27,26 @@ static void MoveToStr(int mv, char *buf) {
 
 // 核心搜索逻辑（给 nativeSearch 和 nativeTestSearch 共用）
 static void DoSearch(const char *fenStr, int depth, char *result, int resultLen) {
-    // ① 拆 FEN：只取棋盘部分，解析走子方
+    // 拆 FEN：只取棋盘部分，解析走子方
     char fenCopy[256];
     strncpy(fenCopy, fenStr, sizeof(fenCopy) - 1);
-    fenCopy[255] = '\0';
+    fenCopy[sizeof(fenCopy) - 1] = '\0';
     
     char *boardPart = strtok(fenCopy, " ");
     char *sideStr = strtok(NULL, " ");
     
-    // ② 清盘 + 只解析棋盘部分
     Search.pos.ClearBoard();
-    Search.pos.FromFen(boardPart);
+    Search.pos.FromFen(boardPart ? boardPart : fenStr);
     
-    // ③ 设走子方（象眼里 0=红方，1=黑方，w 对应红方）
     if (sideStr && sideStr[0] == 'w') {
         Search.pos.sdPlayer = 0;
-    } else {
+    } else if (sideStr && sideStr[0] == 'b') {
         Search.pos.sdPlayer = 1;
     }
     
-    // ④ 预评估！这步是关键，初始化攻击表等内部结构
     Search.pos.PreEvaluate();
-    
-    // ---- 以下是你原来的搜索参数设置，不动 ----
+
+    // 搜索参数
     Search.bQuit = false;
     Search.bPonder = false;
     Search.bDraw = false;
@@ -75,10 +72,22 @@ static void DoSearch(const char *fenStr, int depth, char *result, int resultLen)
     int mv = Search.mvResult;
     if (mv > 0) {
         char moveStr[8] = {0};
-        MoveToStr(mv, moveStr);
-        snprintf(result, resultLen, "bestmove %s", moveStr);
+        MoveToStr(mv, moveStr);   // "h2e2"
+        
+        int fx = moveStr[0] - 'a';   // 列 -> X
+        int fy = moveStr[1] - '0';   // 行 -> Y（就是 Row）
+        int tx = moveStr[2] - 'a';
+        int ty = moveStr[3] - '0';
+        
+        // 局面评分（红方视角）
+        int score = Search.pos.Evaluate(-MATE_VALUE, MATE_VALUE);
+        
+        snprintf(result, resultLen,
+            "AI建议: (%d,%d) -> (%d,%d)\n评估分数: %d\n搜索节点数: %lld",
+            fy, fx, ty, tx, score, (long long)Search.nNodes);
     } else {
-        snprintf(result, resultLen, "nomove");
+        snprintf(result, resultLen,
+            "AI建议: (-1,-1) -> (-1,-1)\n评估分数: 0\n搜索节点数: 0");
     }
 }
 
