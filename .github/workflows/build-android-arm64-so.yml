@@ -18,7 +18,7 @@ jobs:
 
       - name: Build SO
         run: |
-          cd eleeye/eleeye
+          cd eleeye
           echo "=== 确认文件 ==="
           ls -la xiangqi_jni.cpp
           echo "=== 开始编译 ==="
