@@ -23,7 +23,7 @@ jobs:
           ls -la xiangqi_jni.cpp
           echo "=== 开始编译 ==="
           $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++ \
-            -shared -static-libstdc++ \
+            -shared -static-libstdc++ -fPIC \
             -DCCHESS_A3800 \
             -o libeleeye_engine.so \
             xiangqi_jni.cpp \
