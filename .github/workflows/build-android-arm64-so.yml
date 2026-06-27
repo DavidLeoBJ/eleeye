@@ -30,7 +30,7 @@ jobs:
           -I${ANDROID_NDK_HOME}/sysroot/usr/include/android \
           -I. \
           -I../base \
-          -o libxiangyu_engine.so \
+          -o libeleeye_engine.so \
           xiangqi_jni.cpp \
           search.cpp evaluate.cpp genmoves.cpp position.cpp hash.cpp book.cpp movesort.cpp preeval.cpp \
           ../base/pipe.cpp \
@@ -42,5 +42,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: xiangyu-engine-android-arm64-so
-        path: eleeye/libxiangyu_engine.so
+        path: eleeye/libeleeye_engine.so
         retention-days: 90
