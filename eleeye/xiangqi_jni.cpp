@@ -43,7 +43,11 @@ static void DoSearch(const char *fenStr, int depth, char *result, int resultLen)
     } else if (sideStr && sideStr[0] == 'b') {
         Search.pos.sdPlayer = 1;
     }*/
-
+    static bool initialized = false;
+    if (!initialized) {
+        PreGen();
+        initialized = true;
+    }
     Search.pos.ClearBoard();
     Search.pos.FromFen(fenStr);          // ← 直接传完整 FEN，让它自己解析一切    
     Search.pos.PreEvaluate();
