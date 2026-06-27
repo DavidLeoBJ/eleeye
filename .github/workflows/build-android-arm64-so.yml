@@ -18,29 +18,25 @@ jobs:
     - name: Build SO
       run: |
         cd eleeye
-        
-        # 1. 再次确认文件存在（这一步是为了让你在日志里安心）
-        echo "=== 确认胶水文件存在 ==="
+        echo "=== 确认胶水文件 ==="
         ls -l xiangqi_jni.cpp
-        
-        # 2. 开始编译
         echo "=== 开始编译 ==="
-        $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++ \
+        ${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++ \
           -std=c++17 \
           -O3 -DNDEBUG \
+          -DCCHESS_A3800 \
           -fPIC -shared \
-          -I$ANDROID_NDK_HOME/sysroot/usr/include \
-          -I$ANDROID_NDK_HOME/sysroot/usr/include/android \
+          -I${ANDROID_NDK_HOME}/sysroot/usr/include \
+          -I${ANDROID_NDK_HOME}/sysroot/usr/include/android \
           -I. \
           -I../base \
           -o libxiangyu_engine.so \
           xiangqi_jni.cpp \
           eleeye.cpp search.cpp evaluate.cpp genmoves.cpp position.cpp hash.cpp book.cpp movesort.cpp preeval.cpp \
           ../base/pipe.cpp \
-          ucci.cpp pregen.cpp
-        
-        echo "✅ 编译成功！生成的文件大小："
-        du -h libxiangyu_engine.so
+          ucci.cpp pregen.cpp \
+          -pthread
+        echo "✅ 编译完成，SO大小：$(du -h libxiangyu_engine.so)"
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
