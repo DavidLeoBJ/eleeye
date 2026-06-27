@@ -11,7 +11,7 @@
 // ========== 全局声明 ==========
 //extern "C" void PreGen(void);
 
-static SearchStruct Search;
+SearchStruct Search;
 
 // ========== 核心搜索逻辑 ==========
 static void DoSearch(const char *fenStr, int depth, char *result, int resultLen) {
