@@ -31,9 +31,10 @@ jobs:
             -I. -IPosition -ISearch
           echo "=== 编译完成，SO大小：==="
           du -h libeleeye_engine.so
+          cp libeleeye_engine.so ../libeleeye_engine.so
 
       - name: Upload SO
         uses: actions/upload-artifact@v4
         with:
           name: eleeye-engine-android-arm64-so
-          path: eleeye/eleeye/libeleeye_engine.so
+          path: ./libeleeye_engine.so
