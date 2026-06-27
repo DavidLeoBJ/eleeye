@@ -32,7 +32,7 @@ jobs:
           -I../base \
           -o libxiangyu_engine.so \
           xiangqi_jni.cpp \
-          eleeye.cpp search.cpp evaluate.cpp genmoves.cpp position.cpp hash.cpp book.cpp movesort.cpp preeval.cpp \
+          search.cpp evaluate.cpp genmoves.cpp position.cpp hash.cpp book.cpp movesort.cpp preeval.cpp \
           ../base/pipe.cpp \
           ucci.cpp pregen.cpp \
           -pthread
