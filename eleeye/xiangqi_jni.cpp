@@ -1,46 +1,137 @@
 #include <jni.h>
-#include <string>
-#include "search.h"  // 象眼自带搜索头文件，里面有SetSearchDepth和search_best_move
-#include "pregen.h"  // 象眼预生成数据头文件，避免链接报错
+#include <string.h>
+#include <stdio.h>
+#include "position.h"
+#include "search.h"
+#include "ucci.h"
+#include "pregen.h"
 
-// 对应你Java层的：com.example.chinesechessspectator.engine.ChessEngine.nativeSearch(String fen, int depth)
-extern "C"
-JNIEXPORT jstring JNICALL
-Java_com_example_chinesechessspectator_engine_ChessEngine_nativeSearch(
-    JNIEnv* env, jobject thiz, jstring fen_str, jint depth) {
-    
-    // 1. 转换Java字符串为C++字符串
-    jboolean isCopy;
-    const char* fen = env->GetStringUTFChars(fen_str, &isCopy);
-    std::string fen_cpp(fen);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-    // 2. 用你传入的depth设置象眼搜索深度（象眼原生支持）
-    SetSearchDepth(depth);
-
-    // 3. 调用象眼原生搜索接口，返回最佳着法（ICCS格式，比如"h2e2"）
-    std::string best_move = search_best_move(fen_cpp);
-
-    // 4. 释放Java字符串内存，避免泄漏
-    if (isCopy == JNI_TRUE) {
-        env->ReleaseStringUTFChars(fen_str, fen);
+// 辅助：着法编号 → 坐标字符串（如 "h2e2"）
+static void MoveToStr(int mv, char *buf) {
+    if (mv <= 0) {
+        strcpy(buf, "nomove");
+        return;
     }
-
-    // 5. 转换C++字符串为Java字符串返回
-    return env->NewStringUTF(best_move.c_str());
+    uint32_t dw = MOVE_COORD(mv);
+    char *p = (char *)&dw;
+    buf[0] = p[0];
+    buf[1] = p[1];
+    buf[2] = p[2];
+    buf[3] = p[3];
+    buf[4] = '\0';
 }
 
-// 如果你Java类里有native init方法，加这个；没有的话可以删掉
-extern "C"
-JNIEXPORT void JNICALL
-Java_com_example_chinesechessspectator_engine_ChessEngine_nativeInit(
-    JNIEnv* env, jobject thiz) {
-    // 象眼首次调用search会自动初始化，这里可以留空，也可以加开局库加载逻辑
+// 核心搜索逻辑（给 nativeSearch 和 nativeTestSearch 共用）
+static void DoSearch(const char *fenStr, int depth, char *result, int resultLen) {
+    Search.pos.FromFen(fenStr);
+
+    // 设置搜索参数
+    Search.bQuit = false;
+    Search.bPonder = false;
+    Search.bDraw = false;
+    Search.bBatch = true;
+    Search.bDebug = false;
+    Search.bUseHash = true;
+    Search.bUseBook = false;
+    Search.bNullMove = true;
+    Search.bKnowledge = true;
+    Search.bIdle = false;
+    Search.nGoMode = GO_MODE_INFINITY;
+    Search.nNodes = 0;
+    Search.nCountMask = 0;
+    Search.nProperTimer = 0;
+    Search.nMaxTimer = 0;
+    Search.nRandomMask = 0;
+    Search.nBanMoves = 0;
+    memset(Search.wmvBanList, 0, sizeof(Search.wmvBanList));
+    Search.szBookFile[0] = '\0';
+
+    // 阻塞搜索，结果存入 Search.mvResult（因为定义了 CCHESS_A3800）
+    SearchMain(depth);
+
+    int mv = Search.mvResult;
+    if (mv > 0) {
+        char moveStr[8] = {0};
+        MoveToStr(mv, moveStr);
+        snprintf(result, resultLen, "bestmove %s", moveStr);
+    } else {
+        snprintf(result, resultLen, "nomove");
+    }
 }
 
-// 如果你Java类里有native destroy方法，加这个；没有的话可以删掉
-extern "C"
-JNIEXPORT void JNICALL
-Java_com_example_chinesechessspectator_engine_ChessEngine_nativeDestroy(
-    JNIEnv* env, jobject thiz) {
-    // 象眼无特殊资源需要释放，留空即可
+// ========== 7 个 JNI 函数，严格对齐你的 Java 签名 ==========
+
+// 1. nativeTest()
+JNIEXPORT jstring JNICALL
+Java_com_example_chinesechessspectator_engine_ChessEngine_nativeTest(JNIEnv *env, jobject thiz) {
+    return env->NewStringUTF("XiangYu Engine v3.15 (ElephantEye) JNI OK");
 }
+
+// 2. nativeAdd(int a, int b)
+JNIEXPORT jint JNICALL
+Java_com_example_chinesechessspectator_engine_ChessEngine_nativeAdd(JNIEnv *env, jobject thiz, jint a, jint b) {
+    return a + b;
+}
+
+// 3. nativeEvaluateStartPos()
+JNIEXPORT jint JNICALL
+Java_com_example_chinesechessspectator_engine_ChessEngine_nativeEvaluateStartPos(JNIEnv *env, jobject thiz) {
+    PositionStruct pos;
+    pos.ClearBoard();
+    pos.FromFen(cszStartFen);
+    pos.PreEvaluate();
+    return pos.Evaluate(-MATE_VALUE, MATE_VALUE);
+}
+
+// 4. nativeTestFENParser()
+JNIEXPORT jstring JNICALL
+Java_com_example_chinesechessspectator_engine_ChessEngine_nativeTestFENParser(JNIEnv *env, jobject thiz) {
+    PositionStruct pos;
+    pos.ClearBoard();
+    pos.FromFen(cszStartFen);
+    char fenBuf[128] = {0};
+    pos.ToFen(fenBuf);
+    return env->NewStringUTF(fenBuf);
+}
+
+// 5. nativeTestMoveGenerator()
+JNIEXPORT jstring JNICALL
+Java_com_example_chinesechessspectator_engine_ChessEngine_nativeTestMoveGenerator(JNIEnv *env, jobject thiz) {
+    PositionStruct pos;
+    pos.ClearBoard();
+    pos.FromFen(cszStartFen);
+    MoveStruct mvs[MAX_GEN_MOVES];
+    int n = pos.GenAllMoves(mvs);
+    char buf[64];
+    snprintf(buf, sizeof(buf), "Generated %d moves from startpos", n);
+    return env->NewStringUTF(buf);
+}
+
+// 6. nativeTestSearch()
+JNIEXPORT jstring JNICALL
+Java_com_example_chinesechessspectator_engine_ChessEngine_nativeTestSearch(JNIEnv *env, jobject thiz) {
+    char result[128] = {0};
+    DoSearch(cszStartFen, 2, result, sizeof(result));
+    return env->NewStringUTF(result);
+}
+
+// 7. nativeSearch(String fen, int depth) —— 核心方法
+JNIEXPORT jstring JNICALL
+Java_com_example_chinesechessspectator_engine_ChessEngine_nativeSearch(JNIEnv *env, jobject thiz, jstring fen, jint depth) {
+    const char *fenStr = env->GetStringUTFChars(fen, NULL);
+    if (fenStr == NULL) {
+        return env->NewStringUTF("error: null fen");
+    }
+    char result[128] = {0};
+    DoSearch(fenStr, (int)depth, result, sizeof(result));
+    env->ReleaseStringUTFChars(fen, fenStr);
+    return env->NewStringUTF(result);
+}
+
+#ifdef __cplusplus
+}
+#endif
