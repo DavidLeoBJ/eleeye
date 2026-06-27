@@ -27,7 +27,7 @@ static void MoveToStr(int mv, char *buf) {
 
 // 核心搜索逻辑（给 nativeSearch 和 nativeTestSearch 共用）
 static void DoSearch(const char *fenStr, int depth, char *result, int resultLen) {
-    // 拆 FEN：只取棋盘部分，解析走子方
+    /*// 拆 FEN：只取棋盘部分，解析走子方
     char fenCopy[256];
     strncpy(fenCopy, fenStr, sizeof(fenCopy) - 1);
     fenCopy[sizeof(fenCopy) - 1] = '\0';
@@ -42,8 +42,10 @@ static void DoSearch(const char *fenStr, int depth, char *result, int resultLen)
         Search.pos.sdPlayer = 0;
     } else if (sideStr && sideStr[0] == 'b') {
         Search.pos.sdPlayer = 1;
-    }
-    
+    }*/
+
+    Search.pos.ClearBoard();
+    Search.pos.FromFen(fenStr);          // ← 直接传完整 FEN，让它自己解析一切    
     Search.pos.PreEvaluate();
 
     // 搜索参数
