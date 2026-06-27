@@ -7,8 +7,6 @@
 #include "search.h"
 #include "pregen.h"
 
-SearchStruct Search;
-
 static void DoSearch(const char *fenStr, int depth, char *result, int resultLen) {
     static bool inited = false;
     if (!inited) {
