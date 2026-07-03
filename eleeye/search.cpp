@@ -725,7 +725,8 @@ void SearchMain(int nDepth) {
         Search2.wmvPvLine[0] = bks[i].wmv;
         Search2.wmvPvLine[1] = 0;  // 开局库没有对方应着
         Search.mvResult = bks[i].wmv;
-        Search.nScore = 100;       // 开局库着法，给个正数
+        //不需要nScore=100作为判断条件，改用nNodes作为判断条件
+        //Search.nScore = 100;       // 开局库着法，给个正数
         Search.mvPonder = 0;   // ★ 开局库没有 ponder
         // // 查对方最佳应着（开局库第二步）
         // nBookMoves = GetBookMoves(Search.pos, Search.szBookFile, bks);
@@ -743,6 +744,9 @@ void SearchMain(int nDepth) {
         if (nBookMoves > 0) {
           dwMoveStr = MOVE_COORD(bks[0].wmv);
           printf(" ponder %.4s", (const char *) &dwMoveStr);
+          Search.mvPonder = bks[0].wmv;   // ★ 保存 ponder
+        }else{
+          Search.mvPonder = 0;   // ★ 防脏值
         }
         printf("\n");
         fflush(stdout);

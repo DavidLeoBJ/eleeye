@@ -1,3 +1,6 @@
 /BIN/
 .project
 .settings*.so
+*.bak
+*.so
+eleeye/*.bak
