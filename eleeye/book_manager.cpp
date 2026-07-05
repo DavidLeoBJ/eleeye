@@ -75,8 +75,10 @@ static void CalcZobrist(PositionStruct& pos) {
 }
 
 // ---------- 坐标转换 ----------
-static inline int javaToSq(int y, int x) {
-    return COORD_XY(x + FILE_LEFT, y + RANK_TOP);
+static int javaToSq(int y, int x) {
+    int rank = RANK_TOP + (9 - y);   // y=9 → rank=RANK_TOP, y=0 → rank=RANK_TOP+9
+    int file = FILE_LEFT + x;         // x=0 → FILE_LEFT, x=8 → FILE_LEFT+8
+    return COORD_XY(file, rank);
 }
 
 static inline void sqToJava(int sq, int& y, int& x) {
@@ -280,45 +282,47 @@ Java_com_example_chinesechessspectator_engine_BookManager_nativeQueryBook(
 }
 
 // ---- 设置/删除着法权重 ----
-JNIEXPORT jboolean JNICALL
+extern "C" JNIEXPORT jboolean JNICALL
 Java_com_example_chinesechessspectator_engine_BookManager_nativeSetBookWeight(
     JNIEnv* env, jclass, jstring fen, jint fromY, jint fromX, jint toY, jint toX, jint weight) {
 
     if (!g_loaded) return JNI_FALSE;
 
+    // 算 wmv
+    int sqSrc = javaToSq(fromY, fromX);
+    int sqDst = javaToSq(toY, toX);
+    // 改成：低8位是 src，高8位是 dst
+    uint16_t wmv = (uint16_t)((sqDst << 8) | sqSrc);
+
+    // 算 hash
     const char* cfen = env->GetStringUTFChars(fen, nullptr);
     if (!cfen) return JNI_FALSE;
     uint32_t hash = fenToLock1(cfen);
     env->ReleaseStringUTFChars(fen, cfen);
 
-    int sqSrc = javaToSq(fromY, fromX);
-    int sqDst = javaToSq(toY, toX);
-    uint16_t move = (uint16_t)(sqSrc + (sqDst << 8));
-
     std::lock_guard<std::mutex> lock(g_mutex);
 
-    // 二分查找精确位置
-    BookEntry key{hash, move, 0};
-    auto it = std::lower_bound(g_entries.begin(), g_entries.end(), key,
+    // 先用只比 hash 的 comparator 找区间（跟查询时一致）
+    BookEntry key{hash, 0, 0};
+    auto range = std::equal_range(g_entries.begin(), g_entries.end(), key,
         [](const BookEntry& a, const BookEntry& b) {
-            if (a.dwZobristLock != b.dwZobristLock) return a.dwZobristLock < b.dwZobristLock;
-            return a.wmv < b.wmv;
+            return a.dwZobristLock < b.dwZobristLock;
         });
 
-    // 找到了已有记录
-    if (it != g_entries.end() && it->dwZobristLock == hash && it->wmv == move) {
-        if (weight > 0) {
+    // 在区间里线性找 wmv
+    auto it = range.first;
+    for (; it != range.second; ++it) {
+        if (it->wmv == wmv) {
             it->wvl = (uint16_t)weight;
-        } else {
-            g_entries.erase(it); // 权重<=0 删除
+            LOGD("nativeSetBookWeight: updated hash=0x%08X wmv=0x%04X weight=%d", hash, wmv, weight);
+            return JNI_TRUE;
         }
-        return JNI_TRUE;
     }
 
-    // 没找到，新增（保持有序）
-    if (weight > 0) {
-        g_entries.insert(it, {hash, move, (uint16_t)weight});
-    }
+    // 没找到，新增一条（插在 hash 区间的末尾，保持有序）
+    BookEntry e{hash, wmv, (uint16_t)weight};
+    g_entries.insert(range.second, e);
+    LOGD("nativeSetBookWeight: inserted new hash=0x%08X wmv=0x%04X weight=%d", hash, wmv, weight);
     return JNI_TRUE;
 }
 
