@@ -38,6 +38,7 @@ struct BookEntry {
 };
 #pragma pack(pop)
 
+static std::string g_bookPath;
 static std::vector<BookEntry> g_entries;
 static bool g_loaded = false;
 static std::mutex g_mutex;
@@ -104,6 +105,39 @@ static uint32_t fenToLock1(const char* fen) {
     return pos.zobr.dwLock1;
 }
 
+// 内部调用打开Book
+static bool internalOpenBook() {
+    if (g_loaded) return true;
+    if (g_bookPath.empty()) {
+        LOGD("internalOpenBook: no path set");
+        return false;
+    }
+    
+    FILE* f = fopen(g_bookPath.c_str(), "rb");
+    if (!f) {
+        LOGD("internalOpenBook: fopen failed errno=%d", errno);
+        return false;
+    }
+    
+    fseek(f, 0, SEEK_END);
+    long size = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    
+    if (size % 8 != 0) {
+        fclose(f);
+        return false;
+    }
+    
+    g_entries.resize(size / 8);
+    size_t count = fread(g_entries.data(), 8, size / 8, f);
+    fclose(f);
+    
+    if (count != (size_t)(size / 8)) return false;
+    
+    g_loaded = true;
+    LOGD("internalOpenBook: loaded %zu entries", count);
+    return true;
+}
 // ---------- 保存文件（原子写入）----------
 static bool saveToPath(const char* path) {
     std::string tmp = std::string(path) + ".tmp";
@@ -134,76 +168,11 @@ static bool saveToPath(const char* path) {
 
 extern "C" {
 
-// ---- 打开开局库 ----
-JNIEXPORT jboolean JNICALL
-Java_com_example_chinesechessspectator_engine_BookManager_nativeOpenBook(
-    JNIEnv* env, jclass, jstring path) {
-    // ===== 确诊 =====
-    LOGD("PreGen.zobrTable[1][51].dwLock1 = %u", PreGen.zobrTable[1][51].dwLock1);
-    LOGD("PreGen.zobrTable[0][0].dwLock1 = %u", PreGen.zobrTable[0][0].dwLock1);
-    LOGD("PreGen.zobrPlayer.dwLock1 = %u", PreGen.zobrPlayer.dwLock1);
-    // ================
-
-    const char* cp = env->GetStringUTFChars(path, nullptr);
-    if (!cp) return JNI_FALSE;
-    LOGD("nativeOpenBook: %s", cp);
-
-    std::lock_guard<std::mutex> lock(g_mutex);
-    g_entries.clear();
-    g_loaded = false;
-
-    FILE* fp = fopen(cp, "rb");
-    if (!fp) {
-        LOGE("nativeOpenBook: fopen failed");
-        env->ReleaseStringUTFChars(path, cp);
-        return JNI_FALSE;
-    }
-
-    fseek(fp, 0, SEEK_END);
-    long sz = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
-
-    if (sz <= 0 || sz % sizeof(BookEntry) != 0) {
-        LOGE("nativeOpenBook: invalid size %ld", sz);
-        fclose(fp);
-        env->ReleaseStringUTFChars(path, cp);
-        return JNI_FALSE;
-    }
-
-    size_t count = (size_t)(sz / sizeof(BookEntry));
-    g_entries.resize(count);
-    size_t readn = fread(g_entries.data(), sizeof(BookEntry), count, fp);
-    fclose(fp);
-    env->ReleaseStringUTFChars(path, cp);
-
-    if (readn != count) {
-        LOGE("nativeOpenBook: read %zu expected %zu", readn, count);
-        g_entries.clear();
-        return JNI_FALSE;
-    }
-
-    // 确保有序
-    std::sort(g_entries.begin(), g_entries.end(),
-        [](const BookEntry& a, const BookEntry& b) {
-            if (a.dwZobristLock != b.dwZobristLock) return a.dwZobristLock < b.dwZobristLock;
-            return a.wmv < b.wmv;
-        });
-
-    g_loaded = true;
-    LOGD("nativeOpenBook: loaded %zu entries, first hash=0x%08X",
-         g_entries.size(), g_entries.empty() ? 0 : g_entries[0].dwZobristLock);
-    return JNI_TRUE;
-}
-
-// extern "C" JNIEXPORT jstring JNICALL
-// Java_com_example_chinesechessspectator_engine_BookManager_nativeQueryBook(
-//     JNIEnv* env, jclass, jstring fen) {
-//     return env->NewStringUTF("hello");
-// }
-
 extern "C" JNIEXPORT jstring JNICALL
 Java_com_example_chinesechessspectator_engine_BookManager_nativeQueryBook(
     JNIEnv* env, jclass, jstring fen) {
+
+    if (!internalOpenBook()) return env->NewStringUTF("");
 
     if (!g_loaded) {
         return env->NewStringUTF("");
@@ -286,73 +255,89 @@ extern "C" JNIEXPORT jboolean JNICALL
 Java_com_example_chinesechessspectator_engine_BookManager_nativeSetBookWeight(
     JNIEnv* env, jclass, jstring fen, jint fromY, jint fromX, jint toY, jint toX, jint weight) {
 
+    if (!internalOpenBook()) return JNI_FALSE;
+
     if (!g_loaded) return JNI_FALSE;
 
-    // 算 wmv
-    int sqSrc = javaToSq(fromY, fromX);
-    int sqDst = javaToSq(toY, toX);
-    // 改成：低8位是 src，高8位是 dst
-    uint16_t wmv = (uint16_t)((sqDst << 8) | sqSrc);
-
-    // 算 hash
     const char* cfen = env->GetStringUTFChars(fen, nullptr);
     if (!cfen) return JNI_FALSE;
-    uint32_t hash = fenToLock1(cfen);
-    env->ReleaseStringUTFChars(fen, cfen);
+
+    PositionStruct pos;
+    pos.FromFen(cfen);
+    CalcZobrist(pos);
+    uint32_t hashOrig = pos.zobr.dwLock1;
+
+    int sqSrc = javaToSq(fromY, fromX);
+    int sqDst = javaToSq(toY, toX);
+    uint16_t wmv = (uint16_t)((sqDst << 8) | sqSrc);
 
     std::lock_guard<std::mutex> lock(g_mutex);
 
-    // 先用只比 hash 的 comparator 找区间（跟查询时一致）
-    BookEntry key{hash, 0, 0};
+    // 1. 先查 H_orig
+    BookEntry key{hashOrig, 0, 0};
     auto range = std::equal_range(g_entries.begin(), g_entries.end(), key,
-        [](const BookEntry& a, const BookEntry& b) {
-            return a.dwZobristLock < b.dwZobristLock;
-        });
+        [](const BookEntry& a, const BookEntry& b) { return a.dwZobristLock < b.dwZobristLock; });
 
-    // 在区间里线性找 wmv
-    auto it = range.first;
-    for (; it != range.second; ++it) {
+    for (auto it = range.first; it != range.second; ++it) {
         if (it->wmv == wmv) {
             it->wvl = (uint16_t)weight;
-            LOGD("nativeSetBookWeight: updated hash=0x%08X wmv=0x%04X weight=%d", hash, wmv, weight);
+            LOGD("updated H_orig: hash=0x%08X wmv=0x%04X weight=%d", hashOrig, wmv, weight);
+            env->ReleaseStringUTFChars(fen, cfen);
             return JNI_TRUE;
         }
     }
 
-    // 没找到，新增一条（插在 hash 区间的末尾，保持有序）
-    BookEntry e{hash, wmv, (uint16_t)weight};
-    g_entries.insert(range.second, e);
-    LOGD("nativeSetBookWeight: inserted new hash=0x%08X wmv=0x%04X weight=%d", hash, wmv, weight);
-    return JNI_TRUE;
+    // 2. H_orig 没找到 → 镜像查 H_mirror，改那里的
+    PositionStruct posMirror = pos;
+    posMirror.Mirror();
+    CalcZobrist(posMirror);
+    uint32_t hashMirror = posMirror.zobr.dwLock1;
+    uint16_t wmvMirrored = MOVE_MIRROR(wmv);
+
+    BookEntry keyMirror{hashMirror, 0, 0};
+    auto rangeMirror = std::equal_range(g_entries.begin(), g_entries.end(), keyMirror,
+        [](const BookEntry& a, const BookEntry& b) { return a.dwZobristLock < b.dwZobristLock; });
+
+    for (auto it = rangeMirror.first; it != rangeMirror.second; ++it) {
+        if (it->wmv == wmvMirrored) {
+            it->wvl = (uint16_t)weight;
+            LOGD("updated H_mirror: hash=0x%08X wmv=0x%04X weight=%d", hashMirror, wmvMirrored, weight);
+            env->ReleaseStringUTFChars(fen, cfen);
+            return JNI_TRUE;
+        }
+    }
+
+    // 3. 都没找到 → 不 insert，返回 false（不允许往 H_orig 里写）
+    LOGD("nativeSetBookWeight: not found in either H_orig or H_mirror, doing nothing");
+    env->ReleaseStringUTFChars(fen, cfen);
+    return JNI_FALSE;
 }
 
 // ---- 保存到文件 ----
-JNIEXPORT jboolean JNICALL
+extern "C" JNIEXPORT jboolean JNICALL
 Java_com_example_chinesechessspectator_engine_BookManager_nativeSaveBook(
-    JNIEnv* env, jclass, jstring path) {
+    JNIEnv* env, jclass) {
 
     if (!g_loaded) return JNI_FALSE;
 
-    std::lock_guard<std::mutex> lock(g_mutex);
+    FILE* f = fopen(g_bookPath.c_str(), "wb");
+    if (!f) {
+        LOGD("nativeSaveBook: fopen failed, path='%s'", g_bookPath.c_str());
+        return JNI_FALSE;
+    }
 
-    // 排序 + 去重（保留权重较大的）
-    std::sort(g_entries.begin(), g_entries.end(),
-        [](const BookEntry& a, const BookEntry& b) {
-            if (a.dwZobristLock != b.dwZobristLock) return a.dwZobristLock < b.dwZobristLock;
-            if (a.wmv != b.wmv) return a.wmv < b.wmv;
-            return a.wvl > b.wvl; // 权重大的排前面
-        });
-    // 去重：相同 hash+move 只保留第一个（权重最大的）
-    g_entries.erase(std::unique(g_entries.begin(), g_entries.end(),
-        [](const BookEntry& a, const BookEntry& b) {
-            return a.dwZobristLock == b.dwZobristLock && a.wmv == b.wmv;
-        }), g_entries.end());
+    for (const auto& e : g_entries) {
+        uint32_t hash_le = e.dwZobristLock;
+        fwrite(&hash_le, 4, 1, f);
+        uint16_t wmv_le = e.wmv;
+        fwrite(&wmv_le, 2, 1, f);
+        uint16_t wvl_le = e.wvl;
+        fwrite(&wvl_le, 2, 1, f);
+    }
 
-    const char* cp = env->GetStringUTFChars(path, nullptr);
-    if (!cp) return JNI_FALSE;
-    bool ok = saveToPath(cp);
-    env->ReleaseStringUTFChars(path, cp);
-    return ok ? JNI_TRUE : JNI_FALSE;
+    fclose(f);
+    LOGD("nativeSaveBook: saved %zu entries to %s", g_entries.size(), g_bookPath.c_str());
+    return JNI_TRUE;
 }
 
 } // extern "C"
@@ -369,4 +354,14 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void*) {
     
     LOGD("JNI_OnLoad: g_intArrayCls cached=%p", g_intArrayCls);
     return JNI_VERSION_1_6;
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_example_chinesechessspectator_engine_BookManager_nativeSetBookPath(
+    JNIEnv* env, jclass, jstring path) {
+    
+    const char* cpath = env->GetStringUTFChars(path, nullptr);
+    g_bookPath = cpath;
+    env->ReleaseStringUTFChars(path, cpath);
+    LOGD("nativeSetBookPath: stored path='%s'", g_bookPath.c_str());
 }
