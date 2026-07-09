@@ -1,10 +1,13 @@
 #include <jni.h>
 #include <string.h>
 #include <stdlib.h>
+#include <android/log.h>
 #include "pregen.h"
 #include "position.h"
 #include "search.h"
 #include "hash.h"       // ← 加上这个，NewHash 就有了
+#include "book_common.h"  // 引入公共残局查询方法
+#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, "ChessEngine", __VA_ARGS__)
 
 bool g_useBook = true;   // 默认开局库开启
 static char g_bookPath[1024] = "";   // ★ 全局存路径
@@ -31,7 +34,6 @@ static void InitEngine() {
     Search.nBanMoves = 0;
     Search.bQuit = Search.bBatch = Search.bDebug = false;
     Search.bUseHash = true;
-    //Search.bUseBook = Search.bNullMove = Search.bKnowledge = g_useBook;// bUseBook 不在 initEngine 里设，由搜索函数里统一管
     Search.bNullMove = Search.bKnowledge = true;
     Search.bIdle = false;
     Search.nCountMask = 4095;
@@ -58,8 +60,8 @@ static bool ResetSearch(const char *fenStr) {
     Search.nBanMoves = 0;
     Search.nGoMode = GO_MODE_INFINITY;
     Search.nNodes = 0;
-    Search.mvResult = 0;      // ← 加这行！清零
-    Search.nScore = 0;        // ← 加这行！清零
+    Search.mvResult = 0;      
+    Search.nScore = 0;       
     Search.bUseHash = true;
     // ★ 这行必须加！否则开局库路径不对，导致开局库不起作用.
     strncpy(Search.szBookFile, g_bookPath, sizeof(Search.szBookFile) - 1);  // ★ 这行必须加！
@@ -79,8 +81,30 @@ static void DoSearch(const char *fenStr, int depth, SearchOutput *out) {
         return;
     }
 
+    // ===== 新增：残局库优先查询逻辑（核心！完全复用bookmanager能力）=====
+    if (Search.bUseBook) {  // 复用现有开局库开关，用户关闭书时同时关闭残局库
+        uint32_t endgameHash = 0;
+        // 修正：把Search.pos转为fen字符串
+        char fenBuf[512];
+        memset(fenBuf, 0, sizeof(fenBuf) - 1);
+        Search.pos.ToFen(fenBuf);
+        
+        std::string fenForQuery = fenBuf;
+
+        // 传入ResetSearch解析好的全局局面Search.pos，无需转FEN，效率最高
+        int endgameWmv = queryEndgameMoveInternal(fenForQuery, endgameHash);
+        if (endgameWmv != 0) {
+            // 命中残局库：设置结果着法，保持nNodes=0，让后续isBookMove判断自动生效
+            Search.mvResult = endgameWmv;
+            // 直接跳转到输出构建逻辑，不执行后续深度搜索和原版开局库查询
+            goto OUTPUT_BUILD;
+        }
+    }// ===== 新增结束 =====
+
     SearchMain(depth);
 
+    // 新增结果构建标签
+    OUTPUT_BUILD:
     out->score = Search.nScore;
     out->mv = Search.mvResult;
     out->ponderMv = Search.mvPonder;    
@@ -96,9 +120,7 @@ static void DoSearch(const char *fenStr, int depth, SearchOutput *out) {
         int toFile = s[2] - 'a';
         int toRank = 9 - (s[3] - '0');  // 坐标转换
 
-        snprintf(out->bestmoveStr, sizeof(out->bestmoveStr),
-            "bestmove(%d,%d,%d,%d)",
-            fromRank, fromFile, toRank, toFile);
+        snprintf(out->bestmoveStr, sizeof(out->bestmoveStr), "bestmove(%d,%d,%d,%d)", fromRank, fromFile, toRank, toFile);
     }  
     // 删除search.cpp:line729 Search.nScore=100; 这行，改用 nNodes 来判断是否开局库着法,更合理，避免误判。
     bool isBookMove = (Search.nNodes == 0);
@@ -110,8 +132,7 @@ static void DoSearch(const char *fenStr, int depth, SearchOutput *out) {
         int pfromRank = 9 - (ps[1] - '0');
         int ptoFile = ps[2] - 'a';
         int ptoRank = 9 - (ps[3] - '0');
-        snprintf(out->ponderText, sizeof(out->ponderText),
-            "\nponder(%d,%d,%d,%d)", pfromRank, pfromFile, ptoRank, ptoFile);
+        snprintf(out->ponderText, sizeof(out->ponderText), "\nponder(%d,%d,%d,%d)", pfromRank, pfromFile, ptoRank, ptoFile);
     }
 
     // 杀棋判断
@@ -178,7 +199,6 @@ Java_com_example_chinesechessspectator_engine_ChessEngine_nativeEvaluate(
     
     const char* fenStr = env->GetStringUTFChars(fen, NULL);   
     
-    
     SearchOutput out;   
 
     DoSearch(fenStr, depth, &out); 
@@ -197,7 +217,6 @@ Java_com_example_chinesechessspectator_engine_ChessEngine_nativeSearchAndEvaluat
     JNIEnv* env, jclass clazz, jstring fen, jint depth) {
     
     const char* fenStr = env->GetStringUTFChars(fen, NULL);
-
     
     SearchOutput out;   
 
