@@ -1,3 +1,25 @@
+# ==================== IDE/工具缓存 ====================
+# Clangd缓存（绝对不能提交）
+.clangd
+*.clangd
+.clangd-format
+.clangd-cache/
+compile_commands.json
+
+# Android Studio/IDEA缓存
+.idea/
+gradle/
+build/
+app/build/
+captures/
+
+# ==================== 编译产物 ====================
+*.o
+*.so
+*.a
+eleeye/*.bin
+eleeye/*.dat  # 除非你想提交book.dat，否则残局库文件也忽略
+
 # ==================== 编译产物（精准匹配项目路径）====================
 # 安卓动态库输出目录（so实际存放位置）
 eleeye/jniLibs/

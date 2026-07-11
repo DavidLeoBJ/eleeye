@@ -1,5 +1,5 @@
 // eleeye/book_manager.cpp
-
+#define MODULE_TAG "BookManager"
 #include "book_common.h"
 #include <jni.h>
 #include <vector>
@@ -54,7 +54,7 @@ void CalcZobrist(PositionStruct& pos) {
         if (pc == 0) continue;
         
         int pt = PIECE_TYPE(pc);       // ← 直接调 eleeye 的函数，返回 0~6
-        if (pc >= 32) {
+        if (pc >= 17) {
             pt += 7;                   // ← 照抄 position.cpp：红方走黑方槽
         }
         // pt 范围是 7~13，完全合法！
@@ -481,22 +481,22 @@ Java_com_example_chinesechessspectator_engine_BookManager_nativeInsertBookMove(
         return JNI_FALSE;
     }
     
-    // ✅ 在解析FEN之后，计算hash之前，先找到红帅和黑将的位置
-    int redKingSq = 0, blackKingSq = 0;
-    for (int sq = 0; sq < 256; sq++) {
-        if (pos.ucpcSquares[sq] == 1) {    // 红帅的编码是1
-            redKingSq = sq;
-        } else if (pos.ucpcSquares[sq] == 17) { // 黑将的编码是17
-            blackKingSq = sq;
-        }
-    }
+    // // ✅ 在解析FEN之后，计算hash之前，先找到红帅和黑将的位置
+    // int redKingSq = 0, blackKingSq = 0;
+    // for (int sq = 0; sq < 256; sq++) {
+    //     if (pos.ucpcSquares[sq] == 1) {    // 红帅的编码是1
+    //         redKingSq = sq;
+    //     } else if (pos.ucpcSquares[sq] == 17) { // 黑将的编码是17
+    //         blackKingSq = sq;
+    //     }
+    // }
 
-    // 然后再校验
-    if (redKingSq == 0 || blackKingSq == 0) {
-        LOGE("FAIL: Missing king after parsing!");
-        env->ReleaseStringUTFChars(fen, cfen);
-        return JNI_FALSE;
-    }
+    // // 然后再校验
+    // if (redKingSq == 0 || blackKingSq == 0) {
+    //     LOGE("FAIL: Missing king after parsing!");
+    //     env->ReleaseStringUTFChars(fen, cfen);
+    //     return JNI_FALSE;
+    // }
     
     // 计算hash（parseFenForEndgame已经算过了，这里直接用）
     uint32_t hashOrig = pos.zobr.dwLock1;
