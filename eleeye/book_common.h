@@ -6,12 +6,14 @@
 #include "position.h"// ✅ 关键修正：先包含position.h！它定义了PositionStruct类型
 #include "book.h"// ✅ 再包含book.h！它定义了BookEntry类型（源码里BookEntry是全局的，不在任何命名空间）
 
-#ifndef LOGE
-#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, "ChessEngine", __VA_ARGS__)
+// 强制要求包含本头文件的模块必须先定义MODULE_TAG，否则编译报错（防漏写）
+#ifndef MODULE_TAG
+#error "Must define MODULE_TAG before including book_common.h (e.g. #define MODULE_TAG \"XiangqiJNI\")"
 #endif
-#ifndef LOGD
-#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, "ChessEngine", __VA_ARGS__)
-#endif
+
+// 统一日志宏，自动带上当前模块的TAG
+#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, MODULE_TAG, __VA_ARGS__)
+#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, MODULE_TAG, __VA_ARGS__)
 
 #pragma pack(push, 1)
 struct BookEntry {

@@ -1,3 +1,4 @@
+#define MODULE_TAG "BookCommon"
 #include "book_common.h"
 #include <algorithm>
 
@@ -8,6 +9,8 @@ int queryEndgameMoveInternal(const std::string& rawFen, uint32_t& outHash) {
     }
 
     std::string stdFen = normalizeFenForEndgame(rawFen);
+    // ✅ 加这行日志，直接对比两个rawFen的归一化结果
+    LOGE("EndgameNormalize: rawFen=%s => stdFen=%s", rawFen.c_str(), stdFen.c_str());
     PositionStruct pos;
 
     if (isEndgameFen(rawFen)) { // 必须用原始FEN判断残局
