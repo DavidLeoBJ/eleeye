@@ -1,14 +1,36 @@
 #define MODULE_TAG "BookCommon"
+#include "book_endgame_normalizer.h"
 #include "book_common.h"
 #include <algorithm>
+#include <vector>
+#include <string>
+#include <sstream>
 
+// Java坐标转象眼SQ（之前Common命名空间里的逻辑，挪到全局）
+int JavaCoordToSq(int javaRank, int javaFile) {
+    // 你之前的转换逻辑，比如：
+    int x = javaFile - 1;  // Java列1-9 → 0-8
+    int y = 9 - javaRank;  // Java行1-9 → 0-9（1=红底线）
+    return SQ(x, y);
+}
+/** 解析FEN字符串并填充PositionStruct对象 
+
+** 1. 首先判断开局库是否已加载，如果没有加载则调用internalOpenBook()加载。
+** 2. 然后对输入的FEN进行归一化处理，得到标准化的FEN字符串。
+** 3. 检查标准化的FEN是否是残局FEN，如果是残局FEN则解析标准化的FEN得到棋盘状态。
+** 4. 如果标准化的FEN不是残局FEN，则直接将输入的FEN解析得到棋盘状态。
+** 5. 获取标准化FEN对应的Zobrist锁（哈希值）。  
+** 8. 加锁并查找Zobrist锁对应的BookEntry。
+** 9. 如果找到BookEntry，则返回权重最高的着法（wmv）。  
+** 10. 如果没有找到BookEntry，则返回0。
+*/
 int queryEndgameMoveInternal(const std::string& rawFen, uint32_t& outHash) {
-    if (!g_loaded && !internalOpenBook()) {
+    if (!g_loaded && !internalOpenBook()) {// 如果开局库未打开过，并且开局库打不开
         LOGE("queryEndgameMoveInternal: Failed to load book!");
         return 0;
     }
 
-    std::string stdFen = normalizeFenForEndgame(rawFen);
+    std::string stdFen = EndgameNormalizer::normalizeFenForEndgame(rawFen);
     // ✅ 加这行日志，直接对比两个rawFen的归一化结果
     LOGE("EndgameNormalize: rawFen=%s => stdFen=%s", rawFen.c_str(), stdFen.c_str());
     PositionStruct pos;
@@ -55,4 +77,21 @@ int queryEndgameMoveInternal(const std::string& rawFen, uint32_t& outHash) {
         }
     }
     return bestWmv;
+}
+
+// 定义全局段落缓存
+std::vector<std::string> g_stdFenSegments;
+// 原来的void版本实现，把段落存到全局缓存里
+void splitFenToSegments(const std::string& fen) {
+    g_stdFenSegments.clear();
+    std::istringstream iss(fen);
+    std::string seg;
+    // 按空格拆分FEN为6个标准段落（局面/轮走方/王车易位/过路兵/半回合数/回合数）
+    for (int i = 0; i < 6 && iss >> seg; ++i) {
+        g_stdFenSegments.push_back(seg);
+    }
+    // 补全不足6段的场景
+    while (g_stdFenSegments.size() < 6) {
+        g_stdFenSegments.push_back("");
+    }
 }

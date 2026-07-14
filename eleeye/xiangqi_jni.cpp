@@ -1,6 +1,8 @@
 #define MODULE_TAG "XiangqiJNI" // JNI层日志，一眼认得出
-#include "book_common.h"        // 引入公共残局查询方法
-#include "hash.h"               // ← 加上这个，NewHash 就有了
+#include "book.h"
+#include "book_common.h" // 引入公共残局查询方法
+#include "book_endgame_normalizer.h"
+#include "hash.h" // ← 加上这个，NewHash 就有了
 #include "position.h"
 #include "pregen.h"
 #include "search.h"
@@ -9,19 +11,20 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 #define TEST_QUICK_MATE_SEARCH 1 // 1=开测试，0=关测试，完全不影响现有代码
 
 int LightCountMateSteps(const PositionStruct &pos);
 bool g_useBook = true;             // 默认开局库开启
 static char g_bookPath[1024] = ""; // ★ 全局存路径
-#define MAX_QUICK_DEPTH 5    // 最多搜5层，足够找2-3步杀，毫秒级完成
-#define MAX_NODES 32         // 最多存32个节点，足够残局搜索
+#define MAX_QUICK_DEPTH 5          // 最多搜5层，足够找2-3步杀，毫秒级完成
+#define MAX_NODES 32               // 最多存32个节点，足够残局搜索
 
 // 简化版搜索节点：只存必要信息，不存整个PositionStruct
 struct QuickNode {
-    uint64_t hash;           // 局面哈希，用来查重
-    uint16_t path[MAX_QUICK_DEPTH]; // 路径
-    int depth;                // 当前深度
+  uint64_t hash;                  // 局面哈希，用来查重
+  uint16_t path[MAX_QUICK_DEPTH]; // 路径
+  int depth;                      // 当前深度
 };
 
 // 全局静态缓冲区
@@ -29,98 +32,7 @@ static QuickNode g_quick_nodes[MAX_NODES];
 static uint64_t g_quick_visited[MAX_NODES]; // 重复检测哈希表
 
 // ✅ 全局测试开关：默认false，平时完全不执行测试代码，不会出任何问题
-static bool g_enable_quick_mate_test = true; 
-
-// eleeye/xiangqi_jni.cpp 里的TestQuickMateSearch函数，修正后：
-static void TestQuickMateSearch() {
-    struct timespec ts_start, ts_end;
-    clock_gettime(CLOCK_MONOTONIC, &ts_start);
-    bool found = false;
-    int steps = 0;
-    uint16_t final_path[MAX_QUICK_DEPTH] = {0};
-    // 初始化根局面
-    PositionStruct root_pos;
-    root_pos.FromFen("3P5/4R4/5k3/9/9/5r3/9/9/4K4/9 w");
-    // ✅ 修正1：直接读dwZobrist成员变量，不是调用函数
-    uint32_t root_hash = root_pos.zobr.dwKey; 
-    // 初始化全局缓冲区
-    memset(g_quick_nodes, 0, sizeof(g_quick_nodes));
-    memset(g_quick_visited, 0, sizeof(g_quick_visited));
-    int node_cnt = 0;
-    g_quick_nodes[node_cnt].hash = root_hash;
-    g_quick_nodes[node_cnt].depth = 0;
-    node_cnt++;
-    g_quick_visited[0] = root_hash;
-    int visited_cnt = 1;
-    // DFS搜索
-    for (int i = 0; i < node_cnt; i++) {
-        QuickNode cur = g_quick_nodes[i];
-        // 超时检查
-        clock_gettime(CLOCK_MONOTONIC, &ts_end);
-        if ((ts_end.tv_sec - ts_start.tv_sec)*1000 + (ts_end.tv_nsec - ts_start.tv_nsec)/1000000 > 5) {
-            LOGE("QuickMateSearch: timeout");
-            break;
-        }
-        // 恢复当前局面
-        PositionStruct cur_pos;
-        cur_pos.FromFen("3P5/4R4/5k3/9/9/5r3/9/9/4K4/9 w");
-        for (int d = 0; d < cur.depth; d++) {
-            cur_pos.MakeMove(cur.path[d]);
-        }
-        if (cur_pos.IsMate()) {
-            found = true;
-            steps = cur.depth;
-            memcpy(final_path, cur.path, sizeof(uint16_t)*steps);
-            break;
-        }
-        if (cur.depth >= MAX_QUICK_DEPTH) continue;
-        // 生成着法
-        MoveStruct moves[256];
-        int move_cnt = cur_pos.GenAllMoves(moves);
-        int try_cnt = 0;
-        for (int m = 0; m < move_cnt && try_cnt < 5; m++, try_cnt++) {
-            PositionStruct next_pos = cur_pos;
-            next_pos.MakeMove(moves[m].wmv);
-            // ✅ 修正2：直接读dwZobrist成员变量
-            uint32_t next_hash = next_pos.zobr.dwKey; 
-            // 查重
-            bool dup = false;
-            for (int v = 0; v < visited_cnt; v++) {
-                if (g_quick_visited[v] == next_hash) {
-                    dup = true;
-                    break;
-                }
-            }
-            if (dup) continue;
-            if (node_cnt < MAX_NODES) {
-                g_quick_nodes[node_cnt].hash = next_hash;
-                g_quick_nodes[node_cnt].depth = cur.depth + 1;
-                memcpy(g_quick_nodes[node_cnt].path, cur.path, sizeof(uint16_t)*cur.depth);
-                g_quick_nodes[node_cnt].path[cur.depth] = moves[m].wmv;
-                node_cnt++;
-                if (visited_cnt < MAX_NODES) {
-                    g_quick_visited[visited_cnt++] = next_hash;
-                }
-            }
-        }
-    }
-    // 输出结果
-    clock_gettime(CLOCK_MONOTONIC, &ts_end);
-    long cost = (ts_end.tv_sec - ts_start.tv_sec)*1000 + (ts_end.tv_nsec - ts_start.tv_nsec)/1000000;
-    if (found) {
-        LOGE("QuickMateSearch: Found mate! Steps=%d, Cost=%ldms", steps, cost);
-        for (int i = 0; i < steps; i++) {
-            uint32_t coord = ((uint32_t)final_path[i] << 16) | final_path[i];
-            char* s = (char*)&coord;
-            char mvStr[16];
-            snprintf(mvStr, sizeof(mvStr), "%c%d->%c%d",
-                s[0], 9-(s[1]-'0'), s[2], 9-(s[3]-'0'));
-            LOGE("QuickMateSearch: Step %d: %s", i+1, mvStr);
-        }
-    } else {
-        LOGE("QuickMateSearch: No mate found, Cost=%ldms", cost);
-    }
-}
+static bool g_enable_quick_mate_test = true;
 
 // 不要使用全局变量，避免多线程冲突
 struct SearchOutput {
@@ -140,6 +52,38 @@ static int CalcEndgameTotalSteps(const PositionStruct &posAfter) {
   // 老兵搜山：车四平七是第1步，后续2步杀 → 总3步
   return 3;
 }
+
+// // 残局绝杀步数计算：返回最少杀棋步数，超过MAX_DEPTH返回INT_MAX（不算杀棋）
+// // 残局绝杀步数计算：返回我方最少杀棋步数，超深/循环返回INT_MAX
+// static int calculateMateSteps(PositionStruct& pos, int depth = 0) {
+//     constexpr int MAX_MATE_DEPTH = 10;
+//     // 终止条件：超深/重复局面，不算杀棋
+//     if (depth >= MAX_MATE_DEPTH || pos.RepStatus(3) != 0) {
+//         return INT_MAX;
+//     }
+//     //
+//     终止条件：当前局面已将死对方（pos是MakeMove后的对方回合，isMate()为true即对方被将死）
+//     if (pos.isMate()) {
+//         return 1; // 当前这一步就是杀棋，步数为1
+//     }
+//     int minSteps = INT_MAX; // 👈
+//     全程用这个变量存最小步数，刚才的笔误就是写成totalSteps了 MoveStruct
+//     moves[256]; int totalCnt = 0;
+//     // 吃子着法生成（PositionStruct的成员函数，和genMoves.cpp定义完全匹配）
+//     totalCnt = pos.GenCapMoves(moves);
+//     // 非吃子着法生成（同样是成员函数，const修饰符编译器自动处理）
+//     totalCnt += pos.GenNonCapMoves(moves + totalCnt);
+//     for (int i = 0; i < totalCnt; ++i) {
+//         pos.MakeMove(moves[i].wmv); //
+//         着法成员用wmv，和position.h里的定义匹配 int curSteps =
+//         calculateMateSteps(pos, depth + 1); if (curSteps != INT_MAX) {
+//             minSteps = std::min(minSteps, curSteps + 1); // 👈
+//             统一用minSteps，再也不乱了
+//         }
+//         pos.UndoMakeMove();
+//     }
+//     return minSteps; // 👈 返回统一的变量名
+// }
 
 static void InitEngine() {
   PreGenInit();
@@ -203,22 +147,22 @@ static void WmvToStr(uint16_t wmv, char *out, int outSize) {
   // s[0]=起点文件('a'-'i'), s[1]=起点Rank('0'-'9', 9对应第0行，0对应第9行)
   // s[2]=终点文件, s[3]=终点Rank
   snprintf(out, outSize, "%c%d->%c%d", s[0],
-            9 - (s[1] - '0'), // 转成人类可读的Rank（0-9）
-            s[2], 9 - (s[3] - '0'));
+           9 - (s[1] - '0'), // 转成人类可读的Rank（0-9）
+           s[2], 9 - (s[3] - '0'));
 }
 // 在DoSearch函数里，原生搜索之前加测试代码（完全独立，和现有逻辑隔离）
 // 测试用：你给的简单残局（红方2步杀）
-const char* testFen = "3P5/4R4/5k3/9/9/5r3/9/9/4K4/9 w";
+const char *testFen = "3P5/4R4/5k3/9/9/5r3/9/9/4K4/9 w";
 // DFS节点：保存局面、深度、路径（完全不用std::stack）
 struct DfsNode {
-    PositionStruct pos;
-    int depth;
-    uint16_t path[20];
+  PositionStruct pos;
+  int depth;
+  uint16_t path[20];
 };
 
 // 快速搜绝杀：用固定数组当栈，无动态内存，无命名空间冲突
 static void DoSearch(const char *fenStr, int depth, SearchOutput *out) {
-  
+
   // 清零/清空输出
   memset(out, 0, sizeof(SearchOutput));
 
@@ -227,27 +171,49 @@ static void DoSearch(const char *fenStr, int depth, SearchOutput *out) {
     return;
   }
 
+  char rawFen[512];
+  Search.pos.ToFen(rawFen);
+  int endgameWmv = 0; // 残局命中着法，0=未命中
   if (Search.bUseBook) {
-    char rawFen[512];
-    Search.pos.ToFen(rawFen);
-    uint32_t rawHash = Search.pos.zobr.dwKey;
-    int endgameWmv = queryEndgameMoveInternal(rawFen, rawHash);
-    LOGE("EndgameQuery: rawFen=%s, rawHash=0x%08X, ret=0x%04X",
-         rawFen, rawHash, endgameWmv);
-    if (endgameWmv != 0) {
-        // ✅ 核心：直接用残局库预存分，不调用任何IsMate()相关逻辑
-        Search.mvResult = endgameWmv;
-        Search.nScore = endgameWmv; // 预存分完全正确，bookmanager已经验证过
-        Search.mvPonder = 0; // 后续可以加临时搜索算ponder，不影响主分
-        LOGE("EndgameHit: Use preset score, no IsMate check");
-        goto OUTPUT_BUILD; // 直接跳输出，完全不碰原生搜索
+    // 归一化查残局库（完全你之前的逻辑）
+    std::string stdFen = EndgameNormalizer::normalizeFenForEndgame(rawFen);
+    PositionStruct normPos;
+    parseFenForEndgame(stdFen.c_str(), normPos);
+    // 👇 核心修正1：数组类型从BookEntry改为BookStruct，完全匹配book.h声明
+    BookStruct bks[256];
+    // 👇 核心修正2：函数调用完全匹配原生声明，无类型转换错误
+    int nBookMoves = GetBookMoves(normPos, Search.szBookFile, bks);
+    if (nBookMoves > 0) {
+      endgameWmv = bks[0].wmv; // 残局最优着法
+      // 👇 核心修正3：直接用残局库预存分，不用调用isMate，不用算步数
+      // 你之前日志里的"Use preset score"就是这个逻辑！
+      Search.nScore = bks[0].wvl; // BookStruct里的预存评分字段，直接拿来用
+      LOGE("EndgameHit: use preset score=%d", Search.nScore);
+    }
+  }
+  if (endgameWmv != 0) {
+    // 残局命中：只处理ponder，不用算步数
+    Search.mvResult = endgameWmv;
+    // 查ponder（同样修正数组类型为BookStruct）
+    Search.pos.MakeMove(endgameWmv);
+    BookStruct ponderBks[256];
+    int nPonderMoves = GetBookMoves(Search.pos, Search.szBookFile, ponderBks);
+    Search.pos.UndoMakeMove();
+    Search.mvPonder = (nPonderMoves > 0) ? ponderBks[0].wmv : 0;
+    LOGE("EndgameHit: mv=%04X, ponder=%04X", endgameWmv, Search.mvPonder);
+    return; // 残局命中，跳过原生searchMain
+  } else {
+    // 非残局命中：进原生searchMain
+    //SearchOutput out;
+    SearchMain(depth);
+    // 开局命中兜底0分（nNodes=0且非残局）
+    if (Search.nNodes == 0 && endgameWmv == 0) {
+      Search.nScore = 0;
+      LOGE("OpeningHit: force score=0");
     }
   }
 
-  SearchMain(depth);
-
-  // 新增结果构建标签
-  OUTPUT_BUILD:
+  // SearchMain(depth);
   out->score = Search.nScore;
   out->mv = Search.mvResult;
   out->ponderMv = Search.mvPonder;
