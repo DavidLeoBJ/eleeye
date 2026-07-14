@@ -37,7 +37,10 @@ eleeye/*.bak
 
 # ==================== 本地环境配置（不共享）====================
 # 本地编译脚本（不同机器NDK路径不同）
-*.sh
+# 本地编译配置，不纳入开源仓库：但会提交到本地仓库而不会推送到无端仓库
+bookmanager.sh
+build_android.sh
+local_*.sh
 # 安卓本地NDK配置
 local.properties
 
