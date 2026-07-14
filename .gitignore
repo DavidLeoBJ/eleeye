@@ -1,6 +1,36 @@
-/BIN/
-.project
-.settings*.so
-*.bak
+# ==================== 系统/IDE缓存（必加，你之前status里冒过的） ====================
+.clangd
+.clangd-format
+.vscode/
+eleeye/.clangd
+eleeye/.vscode/
+# Windows缩略图缓存
+Thumbs.db
+# Mac缓存（如果以后换设备也能兼容）
+.DS_Store
+
+# ==================== 编译产物（必加，避免误提交so/o） ====================
+*.o
 *.so
+# 安卓编译临时目录（如果有）
+/build/
+/app/build/
+/captures/
+
+# ==================== 本地配置/备份（必加） ====================
+*.bak
 eleeye/*.bak
+# Eclipse/AS本地配置（你已经加了，保留）
+.project
+.settings/
+
+# ==================== 本地编译配置（不提交，你之前明确要求的） ====================
+build_android.sh
+bookmanager.sh  # 残局探索分支的本地脚本，引擎稳定版不需要
+
+# ==================== 其他无用文件（你仓库里有的） ====================
+# 网页快捷方式（没用）
+www.xqbase.com.url
+# 临时日志/测试文件
+*.log
+*.tmp
