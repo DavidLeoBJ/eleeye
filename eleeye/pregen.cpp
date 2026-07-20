@@ -1,4 +1,4 @@
-/* 
+/*
 pregen.h/pregen.cpp - Source Code for ElephantEye, Part II
 
 ElephantEye - a Chinese Chess Program (UCCI Engine)
@@ -19,393 +19,439 @@ You should have received a copy of the GNU Lesser General Public
 License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
-
+#include <cstdio>
 #include <string.h>
 #include "../base/base.h"
 #include "pregen.h"
 
 const bool cbcInBoard[256] = {
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
-  0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
-  0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
-  0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
-  0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
-  0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
-  0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
-  0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
-  0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
-  0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-};
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
+    0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
+    0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
+    0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
+    0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
+    0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
+    0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
+    0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
+    0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
+    0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 const bool cbcInFort[256] = {
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-};
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 const bool cbcCanPromote[256] = {
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-};
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 const int8_t ccLegalSpanTab[512] = {
-                       0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 2, 1, 2, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 2, 1, 2, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0
-};
+    0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 2, 1, 2, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 2, 1, 2, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0};
 
 const int8_t ccKnightPinTab[512] = {
-                               0,  0,  0,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0,  0,-16,  0,-16,  0,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0, -1,  0,  0,  0,  1,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0, -1,  0,  0,  0,  1,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0,  0, 16,  0, 16,  0,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  0,  0,  0,  0
-};
+    0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, -16, 0, -16, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, -1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, -1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 16, 0, 16, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0};
 
 PreGenStruct PreGen;
 PreEvalStruct PreEval;
 
-// ’‚Àƒ∏ˆ ˝◊È”√¿¥≈–∂œ∆Â◊”µƒ◊ﬂ◊”∑ΩœÚ£¨“‘¬ÌŒ™¿˝æÕ «£∫sqDst = sqSrc + cnKnightMoveTab[i]
-static const int cnKingMoveTab[4]    = {-0x10, -0x01, +0x01, +0x10};
+// ËøôÂõõ‰∏™Êï∞ÁªÑÁî®Êù•Âà§Êñ≠Ê£ãÂ≠êÁöÑËµ∞Â≠êÊñπÂêëÔºå‰ª•È©¨‰∏∫‰æãÂ∞±ÊòØÔºösqDst = sqSrc + cnKnightMoveTab[i]
+static const int cnKingMoveTab[4] = {-0x10, -0x01, +0x01, +0x10};
 static const int cnAdvisorMoveTab[4] = {-0x11, -0x0f, +0x0f, +0x11};
-static const int cnBishopMoveTab[4]  = {-0x22, -0x1e, +0x1e, +0x22};
-static const int cnKnightMoveTab[8]  = {-0x21, -0x1f, -0x12, -0x0e, +0x0e, +0x12, +0x1f, +0x21};
+static const int cnBishopMoveTab[4] = {-0x22, -0x1e, +0x1e, +0x22};
+static const int cnKnightMoveTab[8] = {-0x21, -0x1f, -0x12, -0x0e, +0x0e, +0x12, +0x1f, +0x21};
 
-void PreGenInit(void) {
-  int i, j, k, n, sqSrc, sqDst;
-  RC4Struct rc4;
-  SlideMoveStruct smv;
-  SlideMaskStruct sms;
+void PreGenInit(void)
+{
+    fprintf(stderr, "PreGenInit is called.\n");
+    int i, j, k, n, sqSrc, sqDst;
+    RC4Struct rc4;
+    SlideMoveStruct smv;
+    SlideMaskStruct sms;
 
-  //  ◊œ»≥ı ºªØZobristº¸÷µ±Ì
-  rc4.InitZero();
-  PreGen.zobrPlayer.InitRC4(rc4);
-  for (i = 0; i < 14; i ++) {
-    for (j = 0; j < 256; j ++) {
-      PreGen.zobrTable[i][j].InitRC4(rc4);
+    // È¶ñÂÖàÂàùÂßãÂåñZobristÈîÆÂÄºË°®
+    rc4.InitZero();
+    PreGen.zobrPlayer.InitRC4(rc4);
+    for (i = 0; i < 14; i++)
+    {
+        for (j = 0; j < 256; j++)
+        {
+            PreGen.zobrTable[i][j].InitRC4(rc4);
+        }
     }
-  }
 
-  // »ª∫Û≥ı ºªØ∆¡±ŒŒª––∫Õ∆¡±ŒŒª¡–
-  // ◊¢£∫Œª––∫ÕŒª¡–≤ª∞¸¿®∆Â≈Ã“‘Õ‚µƒŒª£¨À˘“‘æÕª·∆µ∑± π”√"+/- RANK_TOP/FILE_LEFT"
-  for (sqSrc = 0; sqSrc < 256; sqSrc ++) {
-    if (IN_BOARD(sqSrc)) {
-      PreGen.wBitRankMask[sqSrc] = 1 << (FILE_X(sqSrc) - FILE_LEFT);
-      PreGen.wBitFileMask[sqSrc] = 1 << (RANK_Y(sqSrc) - RANK_TOP);
-    } else {
-      PreGen.wBitRankMask[sqSrc] = 0;
-      PreGen.wBitFileMask[sqSrc] = 0;
+    // ÁÑ∂ÂêéÂàùÂßãÂåñÂ±èËîΩ‰ΩçË°åÂíåÂ±èËîΩ‰ΩçÂàó
+    // Ê≥®Ôºö‰ΩçË°åÂíå‰ΩçÂàó‰∏çÂåÖÊã¨Ê£ãÁõò‰ª•Â§ñÁöÑ‰ΩçÔºåÊâÄ‰ª•Â∞±‰ºöÈ¢ëÁπÅ‰ΩøÁî®"+/- RANK_TOP/FILE_LEFT"
+    for (sqSrc = 0; sqSrc < 256; sqSrc++)
+    {
+        if (IN_BOARD(sqSrc))
+        {
+            PreGen.wBitRankMask[sqSrc] = 1 << (FILE_X(sqSrc) - FILE_LEFT);
+            PreGen.wBitFileMask[sqSrc] = 1 << (RANK_Y(sqSrc) - RANK_TOP);
+        }
+        else
+        {
+            PreGen.wBitRankMask[sqSrc] = 0;
+            PreGen.wBitFileMask[sqSrc] = 0;
+        }
     }
-  }
 
-  // »ª∫Û…˙≥…≥µ≈⁄∫·œÚµƒ‘§÷√ ˝◊È( ˝◊Èµƒ”¶”√≤Œ‘ƒ"pregen.h")
-  for (i = 0; i < 9; i ++) {
-    for (j = 0; j < 512; j ++) {
-      // ≥ı ºªØΩË÷˙”⁄°∞Œª––°±µƒ≥µ∫Õ≈⁄µƒ◊≈∑®‘§…˙≥… ˝◊È£¨∞¸¿®“‘œ¬º∏∏ˆ≤Ω÷Ë£∫
-      // 1. ≥ı ºªØ¡Ÿ ±±‰¡ø"SlideMoveTab"£¨ºŸ…Ë√ª”–◊≈∑®£¨”√∆ º∏ÒÃÓ≥‰
-      smv.ucNonCap[0] = smv.ucNonCap[1] = smv.ucRookCap[0] = smv.ucRookCap[1] =
-      smv.ucCannonCap[0] = smv.ucCannonCap[1] = smv.ucSuperCap[0] = smv.ucSuperCap[1] = i + FILE_LEFT;
-      sms.wNonCap = sms.wRookCap = sms.wCannonCap = sms.wSuperCap = 0;
-      // Ã· æ£∫≤Œ‘ƒ"pregen.h"£¨...[0]±Ì æ◊Ó¥Û“ª∏Ò£¨œÚ”““∆∂Ø∫Õœ¬“∆∂Ø∂º”√[0]£¨∑¥÷Æ“‡»ª
-      // 2. øº¬«œÚ”““∆∂Øµƒƒø±Í∏Ò£¨ÃÓ≥‰...[0]£¨
-      for (k = i + 1; k <= 8; k ++) {
-        if ((j & (1 << k)) != 0) {
-          smv.ucRookCap[0] = FILE_DISP(k + FILE_LEFT);
-          sms.wRookCap |= 1 << k;
-          break;
-        }
-        smv.ucNonCap[0] = FILE_DISP(k + FILE_LEFT);
-        sms.wNonCap |= 1 << k;
-      }
-      for (k ++; k <= 8; k ++) {
-        if ((j & (1 << k)) != 0) {
-          smv.ucCannonCap[0] = FILE_DISP(k + FILE_LEFT);
-          sms.wCannonCap |= 1 << k;
-          break;
-        }
-      }
-      for (k ++; k <= 8; k ++) {
-        if ((j & (1 << k)) != 0) {
-          smv.ucSuperCap[0] = FILE_DISP(k + FILE_LEFT);
-          sms.wSuperCap |= 1 << k;
-          break;
-        }
-      }
-      // 3. øº¬«œÚ◊Û“∆∂Øµƒƒø±Í∏Ò£¨ÃÓ≥‰...[1]
-      for (k = i - 1; k >= 0; k --) {
-        if ((j & (1 << k)) != 0) {
-          smv.ucRookCap[1] = FILE_DISP(k + FILE_LEFT);
-          sms.wRookCap |= 1 << k;
-          break;
-        }
-        smv.ucNonCap[1] = FILE_DISP(k + FILE_LEFT);
-        sms.wNonCap |= 1 << k;
-      }
-      for (k --; k >= 0; k --) {
-        if ((j & (1 << k)) != 0) {
-          smv.ucCannonCap[1] = FILE_DISP(k + FILE_LEFT);
-          sms.wCannonCap |= 1 << k;
-          break;
-        }
-      }
-      for (k --; k >= 0; k --) {
-        if ((j & (1 << k)) != 0) {
-          smv.ucSuperCap[1] = FILE_DISP(k + FILE_LEFT);
-          sms.wSuperCap |= 1 << k;
-          break;
-        }
-      }
-      // 4. Œ™"smv"∫Õ"sms"µƒ÷µ◊˜∂œ—‘
-      __ASSERT_BOUND_2(3, smv.ucNonCap[1], smv.ucNonCap[0], 11);
-      __ASSERT_BOUND_2(3, smv.ucRookCap[1], smv.ucRookCap[0], 11);
-      __ASSERT_BOUND_2(3, smv.ucCannonCap[1], smv.ucCannonCap[0], 11);
-      __ASSERT_BOUND_2(3, smv.ucSuperCap[1], smv.ucSuperCap[0], 11);
-      __ASSERT_BITRANK(sms.wNonCap);
-      __ASSERT_BITRANK(sms.wRookCap);
-      __ASSERT_BITRANK(sms.wCannonCap);
-      __ASSERT_BITRANK(sms.wSuperCap);
-      // 5. Ω´¡Ÿ ±±‰¡ø"smv"∫Õ"sms"øΩ±¥µΩ◊≈∑®‘§…˙≥… ˝◊È÷–
-      PreGen.smvRankMoveTab[i][j] = smv;
-      PreGen.smsRankMaskTab[i][j] = sms;
-    }
-  }
-
-  // »ª∫Û…˙≥…≥µ≈⁄◊›œÚµƒ‘§÷√ ˝◊È( ˝◊Èµƒ”¶”√≤Œ‘ƒ"pregen.h")
-  for (i = 0; i < 10; i ++) {
-    for (j = 0; j < 1024; j ++) {
-      // ≥ı ºªØΩË÷˙”⁄°∞Œª¡–°±µƒ≥µ∫Õ≈⁄µƒ◊≈∑®‘§…˙≥… ˝◊È£¨∞¸¿®“‘œ¬º∏∏ˆ≤Ω÷Ë£∫
-      // 1. ≥ı ºªØ¡Ÿ ±±‰¡ø"smv"£¨ºŸ…Ë√ª”–◊≈∑®£¨”√∆ º∏ÒÃÓ≥‰
-      smv.ucNonCap[0] = smv.ucNonCap[1] = smv.ucRookCap[0] = smv.ucRookCap[1] =
-      smv.ucCannonCap[0] = smv.ucCannonCap[1] = smv.ucSuperCap[0] = smv.ucSuperCap[1] = (i + RANK_TOP) * 16;
-      sms.wNonCap = sms.wRookCap = sms.wCannonCap = sms.wSuperCap = 0;
-      // 2. øº¬«œÚœ¬“∆∂Øµƒƒø±Í∏Ò£¨ÃÓ≥‰...[0]
-      for (k = i + 1; k <= 9; k ++) {
-        if ((j & (1 << k)) != 0) {
-          smv.ucRookCap[0] = RANK_DISP(k + RANK_TOP);
-          sms.wRookCap |= 1 << k;
-          break;
-        }
-        smv.ucNonCap[0] = RANK_DISP(k + RANK_TOP);
-        sms.wNonCap |= 1 << k;
-      }
-      for (k ++; k <= 9; k ++) {
-        if ((j & (1 << k)) != 0) {
-          smv.ucCannonCap[0] = RANK_DISP(k + RANK_TOP);
-          sms.wCannonCap |= 1 << k;
-          break;
-        }
-      }
-      for (k ++; k <= 9; k ++) {
-        if ((j & (1 << k)) != 0) {
-          smv.ucSuperCap[0] = RANK_DISP(k + RANK_TOP);
-          sms.wSuperCap |= 1 << k;
-          break;
-        }
-      }
-      // 3. øº¬«œÚ…œ“∆∂Øµƒƒø±Í∏Ò£¨ÃÓ≥‰...[1]
-      for (k = i - 1; k >= 0; k --) {
-        if ((j & (1 << k)) != 0) {
-          smv.ucRookCap[1] = RANK_DISP(k + RANK_TOP);
-          sms.wRookCap |= 1 << k;
-          break;
-        }
-        smv.ucNonCap[1] = RANK_DISP(k + RANK_TOP);
-        sms.wNonCap |= 1 << k;
-      }
-      for (k --; k >= 0; k --) {
-        if ((j & (1 << k)) != 0) {
-          smv.ucCannonCap[1] = RANK_DISP(k + RANK_TOP);
-          sms.wCannonCap |= 1 << k;
-          break;
-        }
-      }
-      for (k --; k >= 0; k --) {
-        if ((j & (1 << k)) != 0) {
-          smv.ucSuperCap[1] = RANK_DISP(k + RANK_TOP);
-          sms.wSuperCap |= 1 << k;
-          break;
-        }
-      }
-      // 4. Œ™"smv"∫Õ"sms"µƒ÷µ◊˜∂œ—‘
-      __ASSERT_BOUND_2(3, smv.ucNonCap[1] >> 4, smv.ucNonCap[0] >> 4, 12);
-      __ASSERT_BOUND_2(3, smv.ucRookCap[1] >> 4, smv.ucRookCap[0] >> 4, 12);
-      __ASSERT_BOUND_2(3, smv.ucCannonCap[1] >> 4, smv.ucCannonCap[0] >> 4, 12);
-      __ASSERT_BOUND_2(3, smv.ucSuperCap[1] >> 4, smv.ucSuperCap[0] >> 4, 12);
-      __ASSERT_BITFILE(sms.wNonCap);
-      __ASSERT_BITFILE(sms.wRookCap);
-      __ASSERT_BITFILE(sms.wCannonCap);
-      __ASSERT_BITFILE(sms.wSuperCap);
-      // 5. Ω´¡Ÿ ±±‰¡ø"smv"∫Õ"sms"øΩ±¥µΩ◊≈∑®‘§…˙≥… ˝◊È÷–
-      PreGen.smvFileMoveTab[i][j] = smv;
-      PreGen.smsFileMaskTab[i][j] = sms;
-    }
-  }
-
-  // Ω”œ¬¿¥…˙≥…◊≈∑®‘§…˙≥… ˝◊È£¨¡¨Õ¨Ω´æ¸‘§≈– ˝◊È
-  for (sqSrc = 0; sqSrc < 256; sqSrc ++) {
-    if (IN_BOARD(sqSrc)) {
-      // …˙≥…Àß(Ω´)µƒ◊≈∑®‘§…˙≥… ˝◊È
-      n = 0;
-      for (i = 0; i < 4; i ++) {
-        sqDst = sqSrc + cnKingMoveTab[i];
-        if (IN_FORT(sqDst)) {
-          PreGen.ucsqKingMoves[sqSrc][n] = sqDst;
-          n ++;
-        }
-      }
-      __ASSERT(n <= 4);
-      PreGen.ucsqKingMoves[sqSrc][n] = 0;
-      // …˙≥… À( ø)µƒ◊≈∑®‘§…˙≥… ˝◊È
-      n = 0;
-      for (i = 0; i < 4; i ++) {
-        sqDst = sqSrc + cnAdvisorMoveTab[i];
-        if (IN_FORT(sqDst)) {
-          PreGen.ucsqAdvisorMoves[sqSrc][n] = sqDst;
-          n ++;
-        }
-      }
-      __ASSERT(n <= 4);
-      PreGen.ucsqAdvisorMoves[sqSrc][n] = 0;
-      // …˙≥…œ‡(œÛ)µƒ◊≈∑®‘§…˙≥… ˝◊È£¨∞¸¿®œÛ—€ ˝◊È
-      n = 0;
-      for (i = 0; i < 4; i ++) {
-        sqDst = sqSrc + cnBishopMoveTab[i];
-        if (IN_BOARD(sqDst) && SAME_HALF(sqSrc, sqDst)) {
-          PreGen.ucsqBishopMoves[sqSrc][n] = sqDst;
-          PreGen.ucsqBishopPins[sqSrc][n] = BISHOP_PIN(sqSrc, sqDst);
-          n ++;
-        }
-      }
-      __ASSERT(n <= 4);
-      PreGen.ucsqBishopMoves[sqSrc][n] = 0;
-      // …˙≥…¬Ìµƒ◊≈∑®‘§…˙≥… ˝◊È£¨∞¸¿®¬ÌÕ» ˝◊È
-      n = 0;
-      for (i = 0; i < 8; i ++) {
-        sqDst = sqSrc + cnKnightMoveTab[i];
-        if (IN_BOARD(sqDst)) {
-          PreGen.ucsqKnightMoves[sqSrc][n] = sqDst;
-          PreGen.ucsqKnightPins[sqSrc][n] = KNIGHT_PIN(sqSrc, sqDst);
-          n ++;
-        }
-      }
-      __ASSERT(n <= 8);
-      PreGen.ucsqKnightMoves[sqSrc][n] = 0;
-      // …˙≥…±¯(◊‰)µƒ◊≈∑®‘§…˙≥… ˝◊È
-      for (i = 0; i < 2; i ++) {
-        n = 0;
-        sqDst = SQUARE_FORWARD(sqSrc, i);
-        sqDst = sqSrc + (i == 0 ? -16 : 16);
-        if (IN_BOARD(sqDst)) {
-          PreGen.ucsqPawnMoves[i][sqSrc][n] = sqDst;
-          n ++;
-        }
-        if (AWAY_HALF(sqSrc, i)) {
-          for (j = -1; j <= 1; j += 2) {
-            sqDst = sqSrc + j;
-            if (IN_BOARD(sqDst)) {
-              PreGen.ucsqPawnMoves[i][sqSrc][n] = sqDst;
-              n ++;
+    // ÁÑ∂ÂêéÁîüÊàêËΩ¶ÁÇÆÊ®™ÂêëÁöÑÈ¢ÑÁΩÆÊï∞ÁªÑ(Êï∞ÁªÑÁöÑÂ∫îÁî®ÂèÇÈòÖ"pregen.h")
+    for (i = 0; i < 9; i++)
+    {
+        for (j = 0; j < 512; j++)
+        {
+            // ÂàùÂßãÂåñÂÄüÂä©‰∫é‚Äú‰ΩçË°å‚ÄùÁöÑËΩ¶ÂíåÁÇÆÁöÑÁùÄÊ≥ïÈ¢ÑÁîüÊàêÊï∞ÁªÑÔºåÂåÖÊã¨‰ª•‰∏ãÂá†‰∏™Ê≠•È™§Ôºö
+            // 1. ÂàùÂßãÂåñ‰∏¥Êó∂ÂèòÈáè"SlideMoveTab"ÔºåÂÅáËÆæÊ≤°ÊúâÁùÄÊ≥ïÔºåÁî®Ëµ∑ÂßãÊ†ºÂ°´ÂÖÖ
+            smv.ucNonCap[0] = smv.ucNonCap[1] = smv.ucRookCap[0] = smv.ucRookCap[1] =
+                smv.ucCannonCap[0] = smv.ucCannonCap[1] = smv.ucSuperCap[0] = smv.ucSuperCap[1] = i + FILE_LEFT;
+            sms.wNonCap = sms.wRookCap = sms.wCannonCap = sms.wSuperCap = 0;
+            // ÊèêÁ§∫ÔºöÂèÇÈòÖ"pregen.h"Ôºå...[0]Ë°®Á§∫ÊúÄÂ§ß‰∏ÄÊ†ºÔºåÂêëÂè≥ÁßªÂä®Âíå‰∏ãÁßªÂä®ÈÉΩÁî®[0]ÔºåÂèç‰πã‰∫¶ÁÑ∂
+            // 2. ËÄÉËôëÂêëÂè≥ÁßªÂä®ÁöÑÁõÆÊ†áÊ†ºÔºåÂ°´ÂÖÖ...[0]Ôºå
+            for (k = i + 1; k <= 8; k++)
+            {
+                if ((j & (1 << k)) != 0)
+                {
+                    smv.ucRookCap[0] = FILE_DISP(k + FILE_LEFT);
+                    sms.wRookCap |= 1 << k;
+                    break;
+                }
+                smv.ucNonCap[0] = FILE_DISP(k + FILE_LEFT);
+                sms.wNonCap |= 1 << k;
             }
-          }
+            for (k++; k <= 8; k++)
+            {
+                if ((j & (1 << k)) != 0)
+                {
+                    smv.ucCannonCap[0] = FILE_DISP(k + FILE_LEFT);
+                    sms.wCannonCap |= 1 << k;
+                    break;
+                }
+            }
+            for (k++; k <= 8; k++)
+            {
+                if ((j & (1 << k)) != 0)
+                {
+                    smv.ucSuperCap[0] = FILE_DISP(k + FILE_LEFT);
+                    sms.wSuperCap |= 1 << k;
+                    break;
+                }
+            }
+            // 3. ËÄÉËôëÂêëÂ∑¶ÁßªÂä®ÁöÑÁõÆÊ†áÊ†ºÔºåÂ°´ÂÖÖ...[1]
+            for (k = i - 1; k >= 0; k--)
+            {
+                if ((j & (1 << k)) != 0)
+                {
+                    smv.ucRookCap[1] = FILE_DISP(k + FILE_LEFT);
+                    sms.wRookCap |= 1 << k;
+                    break;
+                }
+                smv.ucNonCap[1] = FILE_DISP(k + FILE_LEFT);
+                sms.wNonCap |= 1 << k;
+            }
+            for (k--; k >= 0; k--)
+            {
+                if ((j & (1 << k)) != 0)
+                {
+                    smv.ucCannonCap[1] = FILE_DISP(k + FILE_LEFT);
+                    sms.wCannonCap |= 1 << k;
+                    break;
+                }
+            }
+            for (k--; k >= 0; k--)
+            {
+                if ((j & (1 << k)) != 0)
+                {
+                    smv.ucSuperCap[1] = FILE_DISP(k + FILE_LEFT);
+                    sms.wSuperCap |= 1 << k;
+                    break;
+                }
+            }
+            // 4. ‰∏∫"smv"Âíå"sms"ÁöÑÂÄº‰ΩúÊñ≠Ë®Ä
+            __ASSERT_BOUND_2(3, smv.ucNonCap[1], smv.ucNonCap[0], 11);
+            __ASSERT_BOUND_2(3, smv.ucRookCap[1], smv.ucRookCap[0], 11);
+            __ASSERT_BOUND_2(3, smv.ucCannonCap[1], smv.ucCannonCap[0], 11);
+            __ASSERT_BOUND_2(3, smv.ucSuperCap[1], smv.ucSuperCap[0], 11);
+            __ASSERT_BITRANK(sms.wNonCap);
+            __ASSERT_BITRANK(sms.wRookCap);
+            __ASSERT_BITRANK(sms.wCannonCap);
+            __ASSERT_BITRANK(sms.wSuperCap);
+            // 5. Â∞Ü‰∏¥Êó∂ÂèòÈáè"smv"Âíå"sms"Êã∑Ë¥ùÂà∞ÁùÄÊ≥ïÈ¢ÑÁîüÊàêÊï∞ÁªÑ‰∏≠
+            PreGen.smvRankMoveTab[i][j] = smv;
+            PreGen.smsRankMaskTab[i][j] = sms;
         }
-        __ASSERT(n <= 3);
-        PreGen.ucsqPawnMoves[i][sqSrc][n] = 0;
-      }
     }
-  }
 
-  // ◊Ó∫Û«Âø’æ÷√Ê‘§∆¿º€Ω·ππ
-  memset(&PreEval, 0, sizeof(PreEvalStruct));
-  PreEval.bPromotion = false; // »± ° «≤ª‘ –Ì…˝±‰µƒ
+    // ÁÑ∂ÂêéÁîüÊàêËΩ¶ÁÇÆÁ∫µÂêëÁöÑÈ¢ÑÁΩÆÊï∞ÁªÑ(Êï∞ÁªÑÁöÑÂ∫îÁî®ÂèÇÈòÖ"pregen.h")
+    for (i = 0; i < 10; i++)
+    {
+        for (j = 0; j < 1024; j++)
+        {
+            // ÂàùÂßãÂåñÂÄüÂä©‰∫é‚Äú‰ΩçÂàó‚ÄùÁöÑËΩ¶ÂíåÁÇÆÁöÑÁùÄÊ≥ïÈ¢ÑÁîüÊàêÊï∞ÁªÑÔºåÂåÖÊã¨‰ª•‰∏ãÂá†‰∏™Ê≠•È™§Ôºö
+            // 1. ÂàùÂßãÂåñ‰∏¥Êó∂ÂèòÈáè"smv"ÔºåÂÅáËÆæÊ≤°ÊúâÁùÄÊ≥ïÔºåÁî®Ëµ∑ÂßãÊ†ºÂ°´ÂÖÖ
+            smv.ucNonCap[0] = smv.ucNonCap[1] = smv.ucRookCap[0] = smv.ucRookCap[1] =
+                smv.ucCannonCap[0] = smv.ucCannonCap[1] = smv.ucSuperCap[0] = smv.ucSuperCap[1] = (i + RANK_TOP) * 16;
+            sms.wNonCap = sms.wRookCap = sms.wCannonCap = sms.wSuperCap = 0;
+            // 2. ËÄÉËôëÂêë‰∏ãÁßªÂä®ÁöÑÁõÆÊ†áÊ†ºÔºåÂ°´ÂÖÖ...[0]
+            for (k = i + 1; k <= 9; k++)
+            {
+                if ((j & (1 << k)) != 0)
+                {
+                    smv.ucRookCap[0] = RANK_DISP(k + RANK_TOP);
+                    sms.wRookCap |= 1 << k;
+                    break;
+                }
+                smv.ucNonCap[0] = RANK_DISP(k + RANK_TOP);
+                sms.wNonCap |= 1 << k;
+            }
+            for (k++; k <= 9; k++)
+            {
+                if ((j & (1 << k)) != 0)
+                {
+                    smv.ucCannonCap[0] = RANK_DISP(k + RANK_TOP);
+                    sms.wCannonCap |= 1 << k;
+                    break;
+                }
+            }
+            for (k++; k <= 9; k++)
+            {
+                if ((j & (1 << k)) != 0)
+                {
+                    smv.ucSuperCap[0] = RANK_DISP(k + RANK_TOP);
+                    sms.wSuperCap |= 1 << k;
+                    break;
+                }
+            }
+            // 3. ËÄÉËôëÂêë‰∏äÁßªÂä®ÁöÑÁõÆÊ†áÊ†ºÔºåÂ°´ÂÖÖ...[1]
+            for (k = i - 1; k >= 0; k--)
+            {
+                if ((j & (1 << k)) != 0)
+                {
+                    smv.ucRookCap[1] = RANK_DISP(k + RANK_TOP);
+                    sms.wRookCap |= 1 << k;
+                    break;
+                }
+                smv.ucNonCap[1] = RANK_DISP(k + RANK_TOP);
+                sms.wNonCap |= 1 << k;
+            }
+            for (k--; k >= 0; k--)
+            {
+                if ((j & (1 << k)) != 0)
+                {
+                    smv.ucCannonCap[1] = RANK_DISP(k + RANK_TOP);
+                    sms.wCannonCap |= 1 << k;
+                    break;
+                }
+            }
+            for (k--; k >= 0; k--)
+            {
+                if ((j & (1 << k)) != 0)
+                {
+                    smv.ucSuperCap[1] = RANK_DISP(k + RANK_TOP);
+                    sms.wSuperCap |= 1 << k;
+                    break;
+                }
+            }
+            // 4. ‰∏∫"smv"Âíå"sms"ÁöÑÂÄº‰ΩúÊñ≠Ë®Ä
+            __ASSERT_BOUND_2(3, smv.ucNonCap[1] >> 4, smv.ucNonCap[0] >> 4, 12);
+            __ASSERT_BOUND_2(3, smv.ucRookCap[1] >> 4, smv.ucRookCap[0] >> 4, 12);
+            __ASSERT_BOUND_2(3, smv.ucCannonCap[1] >> 4, smv.ucCannonCap[0] >> 4, 12);
+            __ASSERT_BOUND_2(3, smv.ucSuperCap[1] >> 4, smv.ucSuperCap[0] >> 4, 12);
+            __ASSERT_BITFILE(sms.wNonCap);
+            __ASSERT_BITFILE(sms.wRookCap);
+            __ASSERT_BITFILE(sms.wCannonCap);
+            __ASSERT_BITFILE(sms.wSuperCap);
+            // 5. Â∞Ü‰∏¥Êó∂ÂèòÈáè"smv"Âíå"sms"Êã∑Ë¥ùÂà∞ÁùÄÊ≥ïÈ¢ÑÁîüÊàêÊï∞ÁªÑ‰∏≠
+            PreGen.smvFileMoveTab[i][j] = smv;
+            PreGen.smsFileMaskTab[i][j] = sms;
+        }
+    }
+
+    // Êé•‰∏ãÊù•ÁîüÊàêÁùÄÊ≥ïÈ¢ÑÁîüÊàêÊï∞ÁªÑÔºåËøûÂêåÂ∞ÜÂÜõÈ¢ÑÂà§Êï∞ÁªÑ
+    for (sqSrc = 0; sqSrc < 256; sqSrc++)
+    {
+        if (IN_BOARD(sqSrc))
+        {
+            // ÁîüÊàêÂ∏Ö(Â∞Ü)ÁöÑÁùÄÊ≥ïÈ¢ÑÁîüÊàêÊï∞ÁªÑ
+            n = 0;
+            for (i = 0; i < 4; i++)
+            {
+                sqDst = sqSrc + cnKingMoveTab[i];
+                if (IN_FORT(sqDst))
+                {
+                    PreGen.ucsqKingMoves[sqSrc][n] = sqDst;
+                    n++;
+                }
+            }
+            __ASSERT(n <= 4);
+            PreGen.ucsqKingMoves[sqSrc][n] = 0;
+            // ÁîüÊàê‰ªï(Â£´)ÁöÑÁùÄÊ≥ïÈ¢ÑÁîüÊàêÊï∞ÁªÑ
+            n = 0;
+            for (i = 0; i < 4; i++)
+            {
+                sqDst = sqSrc + cnAdvisorMoveTab[i];
+                if (IN_FORT(sqDst))
+                {
+                    PreGen.ucsqAdvisorMoves[sqSrc][n] = sqDst;
+                    n++;
+                }
+            }
+            __ASSERT(n <= 4);
+            PreGen.ucsqAdvisorMoves[sqSrc][n] = 0;
+            // ÁîüÊàêÁõ∏(Ë±°)ÁöÑÁùÄÊ≥ïÈ¢ÑÁîüÊàêÊï∞ÁªÑÔºåÂåÖÊã¨Ë±°ÁúºÊï∞ÁªÑ
+            n = 0;
+            for (i = 0; i < 4; i++)
+            {
+                sqDst = sqSrc + cnBishopMoveTab[i];
+                if (IN_BOARD(sqDst) && SAME_HALF(sqSrc, sqDst))
+                {
+                    PreGen.ucsqBishopMoves[sqSrc][n] = sqDst;
+                    PreGen.ucsqBishopPins[sqSrc][n] = BISHOP_PIN(sqSrc, sqDst);
+                    n++;
+                }
+            }
+            __ASSERT(n <= 4);
+            PreGen.ucsqBishopMoves[sqSrc][n] = 0;
+            // ÁîüÊàêÈ©¨ÁöÑÁùÄÊ≥ïÈ¢ÑÁîüÊàêÊï∞ÁªÑÔºåÂåÖÊã¨È©¨ËÖøÊï∞ÁªÑ
+            n = 0;
+            for (i = 0; i < 8; i++)
+            {
+                sqDst = sqSrc + cnKnightMoveTab[i];
+                if (IN_BOARD(sqDst))
+                {
+                    PreGen.ucsqKnightMoves[sqSrc][n] = sqDst;
+                    PreGen.ucsqKnightPins[sqSrc][n] = KNIGHT_PIN(sqSrc, sqDst);
+                    n++;
+                }
+            }
+            __ASSERT(n <= 8);
+            PreGen.ucsqKnightMoves[sqSrc][n] = 0;
+            // ÁîüÊàêÂÖµ(Âçí)ÁöÑÁùÄÊ≥ïÈ¢ÑÁîüÊàêÊï∞ÁªÑ
+            for (i = 0; i < 2; i++)
+            {
+                n = 0;
+                sqDst = SQUARE_FORWARD(sqSrc, i);
+                sqDst = sqSrc + (i == 0 ? -16 : 16);
+                if (IN_BOARD(sqDst))
+                {
+                    PreGen.ucsqPawnMoves[i][sqSrc][n] = sqDst;
+                    n++;
+                }
+                if (AWAY_HALF(sqSrc, i))
+                {
+                    for (j = -1; j <= 1; j += 2)
+                    {
+                        sqDst = sqSrc + j;
+                        if (IN_BOARD(sqDst))
+                        {
+                            PreGen.ucsqPawnMoves[i][sqSrc][n] = sqDst;
+                            n++;
+                        }
+                    }
+                }
+                __ASSERT(n <= 3);
+                PreGen.ucsqPawnMoves[i][sqSrc][n] = 0;
+            }
+        }
+    }
+
+    // ÊúÄÂêéÊ∏ÖÁ©∫Â±ÄÈù¢È¢ÑËØÑ‰ª∑ÁªìÊûÑ
+    memset(&PreEval, 0, sizeof(PreEvalStruct));
+    PreEval.bPromotion = false; // Áº∫ÁúÅÊòØ‰∏çÂÖÅËÆ∏ÂçáÂèòÁöÑ
 }

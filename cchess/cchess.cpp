@@ -26,9 +26,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../eleeye/position.h"
 #include "cchess.h"
 
-/* ±¾³ÌĞòÊÇElephantEyeÔ´³ÌĞòµÄ¸½¼ÓÄ£¿é£¬×÷ÓÃÊÇ½«ElephantEyeµÄÔ´³ÌĞòÓ¦ÓÃµ½ÆäËûÈí¼şÖĞ¡£
- * ±¾³ÌĞòµÄÒ»¸öÖ÷ÒªÓ¦ÓÃÊÇÖĞ¹úÏóÆå¹æÔòÇı¶¯³ÌĞò£¬ÔÚ±àÒëÊ±¶¨Òå"CCHESS_DLL"ºó£¬¼´¿É±àÒë³É"CCHESS.DLL"¡£
- * Ä¿Ç°¸ÃÇı¶¯³ÌĞòÒÑ¾­³ÉÎª¡¶ÏóÆåÎ×Ê¦¡·µÄÒ»²¿·Ö£¬ÕâÒ²Ê¹µÃ¡¶ÏóÆåÎ×Ê¦¡·ÔÚÖĞ¹úÏóÆå¹æÔò´¦ÀíÉÏµÄºËĞÄ´úÂë¹«¿ª»¯ÁË¡£
+/* æœ¬ç¨‹åºæ˜¯ElephantEyeæºç¨‹åºçš„é™„åŠ æ¨¡å—ï¼Œä½œç”¨æ˜¯å°†ElephantEyeçš„æºç¨‹åºåº”ç”¨åˆ°å…¶ä»–è½¯ä»¶ä¸­ã€‚
+ * æœ¬ç¨‹åºçš„ä¸€ä¸ªä¸»è¦åº”ç”¨æ˜¯ä¸­å›½è±¡æ£‹è§„åˆ™é©±åŠ¨ç¨‹åºï¼Œåœ¨ç¼–è¯‘æ—¶å®šä¹‰"CCHESS_DLL"åï¼Œå³å¯ç¼–è¯‘æˆ"CCHESS.DLL"ã€‚
+ * ç›®å‰è¯¥é©±åŠ¨ç¨‹åºå·²ç»æˆä¸ºã€Šè±¡æ£‹å·«å¸ˆã€‹çš„ä¸€éƒ¨åˆ†ï¼Œè¿™ä¹Ÿä½¿å¾—ã€Šè±¡æ£‹å·«å¸ˆã€‹åœ¨ä¸­å›½è±¡æ£‹è§„åˆ™å¤„ç†ä¸Šçš„æ ¸å¿ƒä»£ç å…¬å¼€åŒ–äº†ã€‚
  */
 
 #ifdef CCHESS_DLL
@@ -60,164 +60,195 @@ extern "C" __declspec(dllexport) LONGLONG WINAPI CchessFile2Chin(LONG dwFileStr,
 extern "C" __declspec(dllexport) LONG WINAPI CchessFile2Move(LONG dwFileStr, const PositionStruct *lppos);
 extern "C" __declspec(dllexport) LONG WINAPI CchessMove2File(LONG mv, const PositionStruct *lppos);
 
-// Çı¶¯³ÌĞòµÄ°æ±¾ºÅ£¬ÔÚ¡¶ÏóÆåÎ×Ê¦¡·ÖĞÊ¹ÓÃ¡°¹ØÓÚ¹æÔò¡±¹¦ÄÜ¿ÉÒÔ¿´µ½¡£
+// é©±åŠ¨ç¨‹åºçš„ç‰ˆæœ¬å·ï¼Œåœ¨ã€Šè±¡æ£‹å·«å¸ˆã€‹ä¸­ä½¿ç”¨â€œå…³äºè§„åˆ™â€åŠŸèƒ½å¯ä»¥çœ‹åˆ°ã€‚
 static const char *const cszCchessVersion = "Chinese Chess Driver 3.21";
 
-LPCSTR WINAPI CchessVersion(VOID) {
-  return cszCchessVersion;
+LPCSTR WINAPI CchessVersion(VOID)
+{
+    return cszCchessVersion;
 }
 
-VOID WINAPI CchessInit(BOOL bTraditional) {
-  PreGenInit();
-  ChineseInit(bTraditional != FALSE);
+VOID WINAPI CchessInit(BOOL bTraditional)
+{
+    PreGenInit();
+    ChineseInit(bTraditional != FALSE);
 }
 
-VOID WINAPI CchessPromotion(BOOL bPromotion) {
-  PreEval.bPromotion = bPromotion != FALSE;
+VOID WINAPI CchessPromotion(BOOL bPromotion)
+{
+    PreEval.bPromotion = bPromotion != FALSE;
 }
 
-VOID WINAPI CchessAddPiece(PositionStruct *lppos, LONG sq, LONG pc, BOOL bDel) {
-  lppos->AddPiece(sq, pc, bDel != FALSE);
+VOID WINAPI CchessAddPiece(PositionStruct *lppos, LONG sq, LONG pc, BOOL bDel)
+{
+    lppos->AddPiece(sq, pc, bDel != FALSE);
 }
 
-BOOL WINAPI CchessCanPromote(PositionStruct *lppos, LONG sq) {
-  int pt;
-  if (PreEval.bPromotion && lppos->CanPromote() && CAN_PROMOTE(sq)) {
-    pt = PIECE_TYPE(lppos->ucpcSquares[sq]);
-    return pt == ADVISOR_TYPE || pt == BISHOP_TYPE;
-  }
-  return FALSE;
-}
-
-BOOL WINAPI CchessTryMove(PositionStruct *lppos, LPLONG lpStatus, LONG mv) {
-  return TryMove(*lppos, *(int *) lpStatus, mv);
-}
-
-VOID WINAPI CchessUndoMove(PositionStruct *lppos) {
-  lppos->UndoMakeMove();
-}
-
-// Ö´ĞĞ¡°¿Õ×Å¡±£¬¸Ã¹¦ÄÜÄ¿Ç°½öÓÃÔÚ¡°ËÑË÷Ê÷·ÖÎöÆ÷¡±ÖĞ
-BOOL WINAPI CchessTryNull(PositionStruct *lppos) {
-  if (lppos->LastMove().ChkChs > 0) {
-    return FALSE;
-  } else {
-    lppos->NullMove();
-    return TRUE;
-  }
-}
-
-// ³·Ïû¡°¿Õ×Å¡±£¬¸Ã¹¦ÄÜÄ¿Ç°½öÓÃÔÚ¡°ËÑË÷Ê÷·ÖÎöÆ÷¡±ÖĞ
-VOID WINAPI CchessUndoNull(PositionStruct *lppos) {
-  lppos->UndoNullMove();
-}
-
-// Éú³ÉÈ«²¿ºÏÀí×Å·¨
-LONG WINAPI CchessGenMoves(PositionStruct *lppos, LPLONG lpmv) {
-  int i, nTotal, nLegal;
-  MoveStruct mvs[MAX_GEN_MOVES];
-  nTotal = lppos->GenAllMoves(mvs);
-  nLegal = 0;
-  for (i = 0; i < nTotal; i ++) {
-    if (lppos->MakeMove(mvs[i].wmv)) {
-      lppos->UndoMakeMove();
-      lpmv[nLegal] = mvs[i].wmv;
-      nLegal ++;
+BOOL WINAPI CchessCanPromote(PositionStruct *lppos, LONG sq)
+{
+    int pt;
+    if (PreEval.bPromotion && lppos->CanPromote() && CAN_PROMOTE(sq))
+    {
+        pt = PIECE_TYPE(lppos->ucpcSquares[sq]);
+        return pt == ADVISOR_TYPE || pt == BISHOP_TYPE;
     }
-  }
-  return nLegal;
+    return FALSE;
 }
 
-VOID WINAPI CchessSetIrrev(PositionStruct *lppos) {
-  lppos->SetIrrev();
+BOOL WINAPI CchessTryMove(PositionStruct *lppos, LPLONG lpStatus, LONG mv)
+{
+    return TryMove(*lppos, *(int *)lpStatus, mv);
 }
 
-VOID WINAPI CchessClearBoard(PositionStruct *lppos) {
-  lppos->ClearBoard();
+VOID WINAPI CchessUndoMove(PositionStruct *lppos)
+{
+    lppos->UndoMakeMove();
 }
 
-VOID WINAPI CchessStartBoard(PositionStruct *lppos) {
-  lppos->FromFen(cszStartFen);
+// æ‰§è¡Œâ€œç©ºç€â€ï¼Œè¯¥åŠŸèƒ½ç›®å‰ä»…ç”¨åœ¨â€œæœç´¢æ ‘åˆ†æå™¨â€ä¸­
+BOOL WINAPI CchessTryNull(PositionStruct *lppos)
+{
+    if (lppos->LastMove().ChkChs > 0)
+    {
+        return FALSE;
+    }
+    else
+    {
+        lppos->NullMove();
+        return TRUE;
+    }
 }
 
-VOID WINAPI CchessBoardMirror(PositionStruct *lppos) {
-  lppos->Mirror();
+// æ’¤æ¶ˆâ€œç©ºç€â€ï¼Œè¯¥åŠŸèƒ½ç›®å‰ä»…ç”¨åœ¨â€œæœç´¢æ ‘åˆ†æå™¨â€ä¸­
+VOID WINAPI CchessUndoNull(PositionStruct *lppos)
+{
+    lppos->UndoNullMove();
 }
 
-VOID WINAPI CchessExchangeSide(PositionStruct *lppos) {
-  ExchangeSide(*lppos);
+// ç”Ÿæˆå…¨éƒ¨åˆç†ç€æ³•
+LONG WINAPI CchessGenMoves(PositionStruct *lppos, LPLONG lpmv)
+{
+    int i, nTotal, nLegal;
+    MoveStruct mvs[MAX_GEN_MOVES];
+    nTotal = lppos->GenAllMoves(mvs);
+    nLegal = 0;
+    for (i = 0; i < nTotal; i++)
+    {
+        if (lppos->MakeMove(mvs[i].wmv))
+        {
+            lppos->UndoMakeMove();
+            lpmv[nLegal] = mvs[i].wmv;
+            nLegal++;
+        }
+    }
+    return nLegal;
 }
 
-VOID WINAPI CchessFlipBoard(PositionStruct *lppos) {
-  FlipBoard(*lppos);
+VOID WINAPI CchessSetIrrev(PositionStruct *lppos)
+{
+    lppos->SetIrrev();
 }
 
-LPSTR WINAPI CchessBoardText(const PositionStruct *lppos, BOOL bAnsi) {
-  static char szBoard[2048];
-  BoardText(szBoard, *lppos, bAnsi != FALSE);
-  return szBoard;
+VOID WINAPI CchessClearBoard(PositionStruct *lppos)
+{
+    lppos->ClearBoard();
 }
 
-LPSTR WINAPI CchessBoard2Fen(const PositionStruct *lppos) {
-  static char szFen[128];
-  lppos->ToFen(szFen);
-  return szFen;
+VOID WINAPI CchessStartBoard(PositionStruct *lppos)
+{
+    lppos->FromFen(cszStartFen);
 }
 
-VOID WINAPI CchessFen2Board(PositionStruct *lppos, LPCSTR szFen) {
-  lppos->FromFen(szFen);
+VOID WINAPI CchessBoardMirror(PositionStruct *lppos)
+{
+    lppos->Mirror();
 }
 
-LPSTR WINAPI CchessFenMirror(LPCSTR szFenSrc) {
-  static char szFenDst[128];
-  FenMirror(szFenDst, szFenSrc);
-  return szFenDst;
+VOID WINAPI CchessExchangeSide(PositionStruct *lppos)
+{
+    ExchangeSide(*lppos);
 }
 
-LONG WINAPI CchessFileMirror(LONG dwFileStr) {
-  return FileMirror(dwFileStr);
+VOID WINAPI CchessFlipBoard(PositionStruct *lppos)
+{
+    FlipBoard(*lppos);
 }
 
-LONG WINAPI CchessChin2File(LONGLONG qwChinStr) {
-  return Chin2File(qwChinStr);
+LPSTR WINAPI CchessBoardText(const PositionStruct *lppos, BOOL bAnsi)
+{
+    static char szBoard[2048];
+    BoardText(szBoard, *lppos, bAnsi != FALSE);
+    return szBoard;
 }
 
-LONGLONG WINAPI CchessFile2Chin(LONG dwFileStr, LONG sd) {
-  return File2Chin(dwFileStr, sd);
+LPSTR WINAPI CchessBoard2Fen(const PositionStruct *lppos)
+{
+    static char szFen[128];
+    lppos->ToFen(szFen);
+    return szFen;
 }
 
-LONG WINAPI CchessFile2Move(LONG dwFileStr, const PositionStruct *lppos) {
-  return File2Move(dwFileStr, *lppos);
+VOID WINAPI CchessFen2Board(PositionStruct *lppos, LPCSTR szFen)
+{
+    lppos->FromFen(szFen);
 }
 
-LONG WINAPI CchessMove2File(LONG mv, const PositionStruct *lppos) {
-  return Move2File(mv, *lppos);
+LPSTR WINAPI CchessFenMirror(LPCSTR szFenSrc)
+{
+    static char szFenDst[128];
+    FenMirror(szFenDst, szFenSrc);
+    return szFenDst;
+}
+
+LONG WINAPI CchessFileMirror(LONG dwFileStr)
+{
+    return FileMirror(dwFileStr);
+}
+
+LONG WINAPI CchessChin2File(LONGLONG qwChinStr)
+{
+    return Chin2File(qwChinStr);
+}
+
+LONGLONG WINAPI CchessFile2Chin(LONG dwFileStr, LONG sd)
+{
+    return File2Chin(dwFileStr, sd);
+}
+
+LONG WINAPI CchessFile2Move(LONG dwFileStr, const PositionStruct *lppos)
+{
+    return File2Move(dwFileStr, *lppos);
+}
+
+LONG WINAPI CchessMove2File(LONG mv, const PositionStruct *lppos)
+{
+    return Move2File(mv, *lppos);
 }
 
 #endif
 
-/* ElephantEyeÔ´³ÌĞòÊ¹ÓÃµÄĞÙÑÀÀû¼ÇºÅÔ¼¶¨£º
+/* ElephantEyeæºç¨‹åºä½¿ç”¨çš„åŒˆç‰™åˆ©è®°å·çº¦å®šï¼š
  *
- * sq: ¸ñ×ÓĞòºÅ(ÕûÊı£¬´Ó0µ½255£¬²ÎÔÄ"pregen.cpp")
- * pc: Æå×ÓĞòºÅ(ÕûÊı£¬´Ó0µ½47£¬²ÎÔÄ"position.cpp")
- * pt: Æå×ÓÀàĞÍĞòºÅ(ÕûÊı£¬´Ó0µ½6£¬²ÎÔÄ"position.cpp")
- * mv: ×Å·¨(ÕûÊı£¬´Ó0µ½65535£¬²ÎÔÄ"position.cpp")
- * sd: ×ß×Ó·½(ÕûÊı£¬0´ú±íºì·½£¬1´ú±íºÚ·½)
- * vl: ¾ÖÃæ¼ÛÖµ(ÕûÊı£¬´Ó"-MATE_VALUE"µ½"MATE_VALUE"£¬²ÎÔÄ"position.cpp")
- * (×¢£ºÒÔÉÏÎå¸ö¼ÇºÅ¿ÉÓëuc¡¢dwµÈ´ú±íÕûÊıµÄ¼ÇºÅÅäºÏÊ¹ÓÃ)
- * pos: ¾ÖÃæ(PositionStructÀàĞÍ£¬²ÎÔÄ"position.h")
- * sms: Î»ĞĞºÍÎ»ÁĞµÄ×Å·¨Éú³ÉÔ¤ÖÃ½á¹¹(²ÎÔÄ"pregen.h")
- * smv: Î»ĞĞºÍÎ»ÁĞµÄ×Å·¨ÅĞ¶ÏÔ¤ÖÃ½á¹¹(²ÎÔÄ"pregen.h")
+ * sq: æ ¼å­åºå·(æ•´æ•°ï¼Œä»0åˆ°255ï¼Œå‚é˜…"pregen.cpp")
+ * pc: æ£‹å­åºå·(æ•´æ•°ï¼Œä»0åˆ°47ï¼Œå‚é˜…"position.cpp")
+ * pt: æ£‹å­ç±»å‹åºå·(æ•´æ•°ï¼Œä»0åˆ°6ï¼Œå‚é˜…"position.cpp")
+ * mv: ç€æ³•(æ•´æ•°ï¼Œä»0åˆ°65535ï¼Œå‚é˜…"position.cpp")
+ * sd: èµ°å­æ–¹(æ•´æ•°ï¼Œ0ä»£è¡¨çº¢æ–¹ï¼Œ1ä»£è¡¨é»‘æ–¹)
+ * vl: å±€é¢ä»·å€¼(æ•´æ•°ï¼Œä»"-MATE_VALUE"åˆ°"MATE_VALUE"ï¼Œå‚é˜…"position.cpp")
+ * (æ³¨ï¼šä»¥ä¸Šäº”ä¸ªè®°å·å¯ä¸ucã€dwç­‰ä»£è¡¨æ•´æ•°çš„è®°å·é…åˆä½¿ç”¨)
+ * pos: å±€é¢(PositionStructç±»å‹ï¼Œå‚é˜…"position.h")
+ * sms: ä½è¡Œå’Œä½åˆ—çš„ç€æ³•ç”Ÿæˆé¢„ç½®ç»“æ„(å‚é˜…"pregen.h")
+ * smv: ä½è¡Œå’Œä½åˆ—çš„ç€æ³•åˆ¤æ–­é¢„ç½®ç»“æ„(å‚é˜…"pregen.h")
  */
 
-/* ÒÔÏÂ³£Á¿¹æ¶¨ÁË×Å·¨±íÊ¾Ê¹ÓÃµÄÊı×Ö¡¢Æå×Ó¡¢·½Ïò(½øÆ½ÍË)¡¢Î»ÖÃ(Ç°ºó)µÈµÄ×î´ó¸öÊı¡£
- * 
- * ±íÊ¾Î»ÖÃµÄ·ûºÅ¹²ÓĞ8¸ö£¬³ıÁË¡°Ç°ÖĞºó¡±ÒÔÍâ»¹ÓĞ¡°Ò»¶şÈıËÄÎå¡±£¬²Î¿¼
- * ¡¶ÖĞ¹úÏóÆåµçÄÔÓ¦ÓÃ¹æ·¶(¶ş)£º×Å·¨±íÊ¾¡·(¼ò³Æ¡¶¹æ·¶¡·)£¬¼´ÒÔÏÂÍøÒ³£º
- * ¡¡¡¡https://www.xqbase.com/protocol/cchess_move.htm
- * ÓÉÓÚ¡°Ç°ÖĞºó¡±±»°²ÅÅÔÚ¡°Ò»¶şÈıËÄÎå¡±ÒÔºó£¬µ«ÓÖºÍ¡°½øÆ½ÍË¡±ÔÚ·ûºÅÉÏÒ»ÖÂ£¬Òò´ËÒª¼Ó¼õ"DIRECT_TO_POS"×÷×ª»»¡£
- * ÁíÍâ£¬ÓÉÓÚÊË(Ê¿)Ïà(Ïó)µÄ×Å·¨±íÊ¾µÄ×İÏßĞÎÊ½ºÍ×ø±êĞÎÊ½ÓĞÒ»Ò»¶ÔÓ¦µÄ¹ØÏµ(¹Ì¶¨×İÏß±íÊ¾)£¬
- * Òò´Ë¿ÉÒÔÊ¹ÓÃÊı×é"cdwFixFile"ºÍ"cucFixMove"¶ÔÁ½Õß½øĞĞ×ª»»£¬×Ü¹²ÓĞ28ÖÖ¶ÔÓ¦¹ØÏµ¡£
+/* ä»¥ä¸‹å¸¸é‡è§„å®šäº†ç€æ³•è¡¨ç¤ºä½¿ç”¨çš„æ•°å­—ã€æ£‹å­ã€æ–¹å‘(è¿›å¹³é€€)ã€ä½ç½®(å‰å)ç­‰çš„æœ€å¤§ä¸ªæ•°ã€‚
+ *
+ * è¡¨ç¤ºä½ç½®çš„ç¬¦å·å…±æœ‰8ä¸ªï¼Œé™¤äº†â€œå‰ä¸­åâ€ä»¥å¤–è¿˜æœ‰â€œä¸€äºŒä¸‰å››äº”â€ï¼Œå‚è€ƒ
+ * ã€Šä¸­å›½è±¡æ£‹ç”µè„‘åº”ç”¨è§„èŒƒ(äºŒ)ï¼šç€æ³•è¡¨ç¤ºã€‹(ç®€ç§°ã€Šè§„èŒƒã€‹)ï¼Œå³ä»¥ä¸‹ç½‘é¡µï¼š
+ * ã€€ã€€https://www.xqbase.com/protocol/cchess_move.htm
+ * ç”±äºâ€œå‰ä¸­åâ€è¢«å®‰æ’åœ¨â€œä¸€äºŒä¸‰å››äº”â€ä»¥åï¼Œä½†åˆå’Œâ€œè¿›å¹³é€€â€åœ¨ç¬¦å·ä¸Šä¸€è‡´ï¼Œå› æ­¤è¦åŠ å‡"DIRECT_TO_POS"ä½œè½¬æ¢ã€‚
+ * å¦å¤–ï¼Œç”±äºä»•(å£«)ç›¸(è±¡)çš„ç€æ³•è¡¨ç¤ºçš„çºµçº¿å½¢å¼å’Œåæ ‡å½¢å¼æœ‰ä¸€ä¸€å¯¹åº”çš„å…³ç³»(å›ºå®šçºµçº¿è¡¨ç¤º)ï¼Œ
+ * å› æ­¤å¯ä»¥ä½¿ç”¨æ•°ç»„"cdwFixFile"å’Œ"cucFixMove"å¯¹ä¸¤è€…è¿›è¡Œè½¬æ¢ï¼Œæ€»å…±æœ‰28ç§å¯¹åº”å…³ç³»ã€‚
  */
 const int MAX_DIGIT = 9;
 const int MAX_PIECE = 7;
@@ -226,820 +257,1026 @@ const int MAX_POS = 8;
 const int DIRECT_TO_POS = 5;
 const int MAX_FIX_FILE = 28;
 
-/* ÒÔÏÂÊÇÊı×Ö¡¢Æå×Ó¡¢·½ÏòºÍÎ»ÖÃ±àÂë¶ÔÓ¦µÄ·ûºÅºÍºº×Ö¡£
+/* ä»¥ä¸‹æ˜¯æ•°å­—ã€æ£‹å­ã€æ–¹å‘å’Œä½ç½®ç¼–ç å¯¹åº”çš„ç¬¦å·å’Œæ±‰å­—ã€‚
  *
- * Êı×é³¤¶ÈÖÁÉÙÒª±ÈÕâĞ©·ûºÅµÄ¸öÊı¶à1£¬ÒÔ"ccDirect2Byte"ÎªÀı£¬µ±·¢ÏÖÃ»ÓĞ·½Ïò¸úÄ³¸ö·ûºÅ¶ÔÓ¦Ê±£¬
- * ¸Ã·½Ïò±àºÅÎª"MAX_DIRECT"£¬»¹Ô­³É·ûºÅÊ±±£Ö¤Êı×é²»Ô½½ç£¬²¢ÒÔ¿Õ¸ñ±íÊ¾¡£
- * ºº×ÖÊı×éÓĞ¼òÌå(GBKÂë)ºÍ·±Ìå(BIG5Âë)Á½Ì×£¬ÒÔ"cwDirect2Word..."ÎªÀı£¬ºó×º"-Simp"±íÊ¾¼òÌå£¬"-Trad"±íÊ¾·±Ìå¡£
- * Êı×éÔÚÊ¹ÓÃÇ°£¬±ØĞëÓÃ"lpcwDirect2Word"Ö¸ÕëÀ´¶¨Î»£¬²ÎÔÄº¯Êı"ChineseInit()"¡£
+ * æ•°ç»„é•¿åº¦è‡³å°‘è¦æ¯”è¿™äº›ç¬¦å·çš„ä¸ªæ•°å¤š1ï¼Œä»¥"ccDirect2Byte"ä¸ºä¾‹ï¼Œå½“å‘ç°æ²¡æœ‰æ–¹å‘è·ŸæŸä¸ªç¬¦å·å¯¹åº”æ—¶ï¼Œ
+ * è¯¥æ–¹å‘ç¼–å·ä¸º"MAX_DIRECT"ï¼Œè¿˜åŸæˆç¬¦å·æ—¶ä¿è¯æ•°ç»„ä¸è¶Šç•Œï¼Œå¹¶ä»¥ç©ºæ ¼è¡¨ç¤ºã€‚
+ * æ±‰å­—æ•°ç»„æœ‰ç®€ä½“(GBKç )å’Œç¹ä½“(BIG5ç )ä¸¤å¥—ï¼Œä»¥"cwDirect2Word..."ä¸ºä¾‹ï¼Œåç¼€"-Simp"è¡¨ç¤ºç®€ä½“ï¼Œ"-Trad"è¡¨ç¤ºç¹ä½“ã€‚
+ * æ•°ç»„åœ¨ä½¿ç”¨å‰ï¼Œå¿…é¡»ç”¨"lpcwDirect2Word"æŒ‡é’ˆæ¥å®šä½ï¼Œå‚é˜…å‡½æ•°"ChineseInit()"ã€‚
  */
 
 static const char ccDirect2Byte[4] = {
-  '+', '.', '-', ' '
-};
+    '+', '.', '-', ' '};
 
 static const char ccPos2Byte[12] = {
-  'a', 'b', 'c', 'd', 'e', '+', '.', '-', ' ', ' ', ' ', ' '
-};
+    'a', 'b', 'c', 'd', 'e', '+', '.', '-', ' ', ' ', ' ', ' '};
 
 static const uint16_t cwDigit2WordSimp[2][10] = {
-  {
-    0xbbd2/*Ò»*/, 0xfeb6/*¶ş*/, 0xfdc8/*Èı*/, 0xc4cb/*ËÄ*/, 0xe5ce/*Îå*/,
-    0xf9c1/*Áù*/, 0xdfc6/*Æß*/, 0xcbb0/*°Ë*/, 0xc5be/*¾Å*/, 0xa1a1/*¡¡*/
-  }, {
-    0xb1a3/*£±*/, 0xb2a3/*£²*/, 0xb3a3/*£³*/, 0xb4a3/*£´*/, 0xb5a3/*£µ*/,
-    0xb6a3/*£¶*/, 0xb7a3/*£·*/, 0xb8a3/*£¸*/, 0xb9a3/*£¹*/, 0xa1a1/*¡¡*/
-  }
-};
+    {
+        0xbbd2 /*ä¸€*/, 0xfeb6 /*äºŒ*/, 0xfdc8 /*ä¸‰*/, 0xc4cb /*å››*/, 0xe5ce /*äº”*/,
+        0xf9c1 /*å…­*/, 0xdfc6 /*ä¸ƒ*/, 0xcbb0 /*å…«*/, 0xc5be /*ä¹*/, 0xa1a1 /*ã€€*/
+    },
+    {
+        0xb1a3 /*ï¼‘*/, 0xb2a3 /*ï¼’*/, 0xb3a3 /*ï¼“*/, 0xb4a3 /*ï¼”*/, 0xb5a3 /*ï¼•*/,
+        0xb6a3 /*ï¼–*/, 0xb7a3 /*ï¼—*/, 0xb8a3 /*ï¼˜*/, 0xb9a3 /*ï¼™*/, 0xa1a1 /*ã€€*/
+    }};
 
 static const uint16_t cwPiece2WordSimp[2][8] = {
-  {
-    0xa7cb/*Ë§*/, 0xcbca/*ÊË*/, 0xe0cf/*Ïà*/, 0xedc2/*Âí*/, 0xb5b3/*³µ*/, 0xdac5/*ÅÚ*/, 0xf8b1/*±ø*/, 0xa1a1/*¡¡*/
-  }, {
-    0xabbd/*½«*/, 0xbfca/*Ê¿*/, 0xf3cf/*Ïó*/, 0xedc2/*Âí*/, 0xb5b3/*³µ*/, 0xdac5/*ÅÚ*/, 0xe4d7/*×ä*/, 0xa1a1/*¡¡*/
-  }
-};
+    {
+        0xa7cb /*å¸…*/, 0xcbca /*ä»•*/, 0xe0cf /*ç›¸*/, 0xedc2 /*é©¬*/, 0xb5b3 /*è½¦*/, 0xdac5 /*ç‚®*/, 0xf8b1 /*å…µ*/, 0xa1a1 /*ã€€*/
+    },
+    {
+        0xabbd /*å°†*/, 0xbfca /*å£«*/, 0xf3cf /*è±¡*/, 0xedc2 /*é©¬*/, 0xb5b3 /*è½¦*/, 0xdac5 /*ç‚®*/, 0xe4d7 /*å’*/, 0xa1a1 /*ã€€*/
+    }};
 
 static const uint16_t cwDirect2WordSimp[4] = {
-  0xf8bd/*½ø*/, 0xbdc6/*Æ½*/, 0xcbcd/*ÍË*/, 0xa1a1/*¡¡*/
+    0xf8bd /*è¿›*/, 0xbdc6 /*å¹³*/, 0xcbcd /*é€€*/, 0xa1a1 /*ã€€*/
 };
 
 static const uint16_t cwPos2WordSimp[10] = {
-  0xbbd2/*Ò»*/, 0xfeb6/*¶ş*/, 0xfdc8/*Èı*/, 0xc4cb/*ËÄ*/, 0xe5ce/*Îå*/,
-  0xb0c7/*Ç°*/, 0xd0d6/*ÖĞ*/, 0xf3ba/*ºó*/, 0xa1a1/*¡¡*/, 0xa1a1/*¡¡*/
+    0xbbd2 /*ä¸€*/, 0xfeb6 /*äºŒ*/, 0xfdc8 /*ä¸‰*/, 0xc4cb /*å››*/, 0xe5ce /*äº”*/,
+    0xb0c7 /*å‰*/, 0xd0d6 /*ä¸­*/, 0xf3ba /*å*/, 0xa1a1 /*ã€€*/, 0xa1a1 /*ã€€*/
 };
 
 static const uint16_t cwDigit2WordTrad[2][10] = {
-  {
-    0x40a4/*¤@[Ò»]*/, 0x47a4/*¤G[¶ş]*/, 0x54a4/*¤T[Èı]*/, 0x7ca5/*¥|[ËÄ]*/, 0xada4/*¤­[Îå]*/,
-    0xbba4/*¤»[Áù]*/, 0x43a4/*¤C[Æß]*/, 0x4ba4/*¤K[°Ë]*/, 0x45a4/*¤E[¾Å]*/, 0x40a1/*¡@*/
-  }, {
-    0xb0a2/*¢°[£±]*/, 0xb1a2/*¢±[£²]*/, 0xb2a2/*¢²[£³]*/, 0xb3a2/*¢³[£´]*/, 0xb4a2/*¢´[£µ]*/,
-    0xb5a2/*¢µ[£¶]*/, 0xb6a2/*¢¶[£·]*/, 0xb7a2/*¢·[£¸]*/, 0xb8a2/*¢¸[£¹]*/, 0x40a1/*¡@*/
-  }
-};
+    {
+        0x40a4 /*ï¿½@[ä¸€]*/, 0x47a4 /*ï¿½G[äºŒ]*/, 0x54a4 /*ï¿½T[ä¸‰]*/, 0x7ca5 /*ï¿½|[å››]*/, 0xada4 /*ã[äº”]*/,
+        0xbba4 /*ã›[å…­]*/, 0x43a4 /*ï¿½C[ä¸ƒ]*/, 0x4ba4 /*ï¿½K[å…«]*/, 0x45a4 /*ï¿½E[ä¹]*/, 0x40a1 /*ï¿½@*/
+    },
+    {
+        0xb0a2 /*ï¿½ç™§ï¼‘]*/, 0xb1a2 /*â’ˆ[ï¼’]*/, 0xb2a2 /*â’‰[ï¼“]*/, 0xb3a2 /*â’Š[ï¼”]*/, 0xb4a2 /*â’‹[ï¼•]*/,
+        0xb5a2 /*â’Œ[ï¼–]*/, 0xb6a2 /*â’[ï¼—]*/, 0xb7a2 /*â’[ï¼˜]*/, 0xb8a2 /*â’[ï¼™]*/, 0x40a1 /*ï¿½@*/
+    }};
 
 static const uint16_t cwPiece2WordTrad[2][8] = {
-  {
-    0xd3ab/*«Ó[›]*/, 0x4ba5/*¥K[ÊË]*/, 0xdbac/*¬Û[Ïà]*/, 0xa8b0/*°¨[ñR]*/,
-    0xaea8/*¨®[Ü‡]*/, 0xb6ac/*¬¶[ÅÚ]*/, 0x4ca7/*§L[±ø]*/, 0x40a1/*¡@*/
-  }, {
-    0x4eb1/*±N[Œ¢]*/, 0x68a4/*¤h[Ê¿]*/, 0x48b6/*¶H[Ïó]*/, 0xa8b0/*°¨[ñR]*/,
-    0xaea8/*¨®[Ü‡]*/, 0xb6ac/*¬¶[ÅÚ]*/, 0xf2a8/*¨ò[×ä]*/, 0x40a1/*¡@*/
-  }
-};
+    {
+        0xd3ab /*ï¿½è¦½å¸¥]*/, 0x4ba5 /*ï¿½K[ä»•]*/, 0xdbac /*ï¿½è¸‡ç›¸]*/, 0xa8b0 /*çš‘[é¦¬]*/,
+        0xaea8 /*Ã³[è»Š]*/, 0xb6ac /*ï¿½ç¦°ç‚®]*/, 0x4ca7 /*ï¿½L[å…µ]*/, 0x40a1 /*ï¿½@*/
+    },
+    {
+        0x4eb1 /*ç›¢[å°‡]*/, 0x68a4 /*ï¿½h[å£«]*/, 0x48b6 /*ç¦œ[è±¡]*/, 0xa8b0 /*çš‘[é¦¬]*/,
+        0xaea8 /*Ã³[è»Š]*/, 0xb6ac /*ï¿½ç¦°ç‚®]*/, 0xf2a8 /*ï¿½é¨•å’]*/, 0x40a1 /*ï¿½@*/
+    }};
 
 static const uint16_t cwDirect2WordTrad[4] = {
-  0x69b6/*¶i[ßM]*/, 0xada5/*¥­[Æ½]*/, 0x68b0/*°h[ÍË]*/, 0x40a1/*¡@*/
+    0x69b6 /*ç§ˆ[é€²]*/, 0xada5 /*ã‚­[å¹³]*/, 0x68b0 /*ç™¶[é€€]*/, 0x40a1 /*ï¿½@*/
 };
 
 static const uint16_t cwPos2WordTrad[10] = {
-  0x40a4/*¤@[Ò»]*/, 0x47a4/*¤G[¶ş]*/, 0x54a4/*¤T[Èı]*/, 0x7ca5/*¥|[ËÄ]*/, 0xada4/*¤­[Îå]*/,
-  0x65ab/*«e[Ç°]*/, 0xa4a4/*¤¤[ÖĞ]*/, 0xe1ab/*«á[áá]*/, 0x40a1/*¡@*/, 0x40a1/*¡@*/
+    0x40a4 /*ï¿½@[ä¸€]*/, 0x47a4 /*ï¿½G[äºŒ]*/, 0x54a4 /*ï¿½T[ä¸‰]*/, 0x7ca5 /*ï¿½|[å››]*/, 0xada4 /*ã[äº”]*/,
+    0x65ab /*ç¡[å‰]*/, 0xa4a4 /*ã„[ä¸­]*/, 0xe1ab /*ï¿½é†„å¾Œ]*/, 0x40a1 /*ï¿½@*/, 0x40a1 /*ï¿½@*/
 };
 
-// ¹Ì¶¨×İÏß±íÊ¾µÄ×İÏßÊı×é
+// å›ºå®šçºµçº¿è¡¨ç¤ºçš„çºµçº¿æ•°ç»„
 static const uint32_t cdwFixFile[28] = {
-  0x352d3441/*A4-5*/, 0x352b3441/*A4+5*/, 0x342d3541/*A5-4*/, 0x342b3541/*A5+4*/,
-  0x362d3541/*A5-6*/, 0x362b3541/*A5+6*/, 0x352d3641/*A6-5*/, 0x352b3641/*A6+5*/,
-  0x332d3142/*B1-3*/, 0x332b3142/*B1+3*/, 0x312d3342/*B3-1*/, 0x312b3342/*B3+1*/,
-  0x352d3342/*B3-5*/, 0x352b3342/*B3+5*/, 0x332d3542/*B5-3*/, 0x332b3542/*B5+3*/,
-  0x372d3542/*B5-7*/, 0x372b3542/*B5+7*/, 0x352d3742/*B7-5*/, 0x352b3742/*B7+5*/,
-  0x392d3742/*B7-9*/, 0x392b3742/*B7+9*/, 0x372d3942/*B9-7*/, 0x372b3942/*B9+7*/,
-  0x503d3441/*A4=P*/, 0x503d3641/*A6=P*/, 0x503d3342/*B3=P*/, 0x503d3742/*B7=P*/
+    0x352d3441 /*A4-5*/, 0x352b3441 /*A4+5*/, 0x342d3541 /*A5-4*/, 0x342b3541 /*A5+4*/,
+    0x362d3541 /*A5-6*/, 0x362b3541 /*A5+6*/, 0x352d3641 /*A6-5*/, 0x352b3641 /*A6+5*/,
+    0x332d3142 /*B1-3*/, 0x332b3142 /*B1+3*/, 0x312d3342 /*B3-1*/, 0x312b3342 /*B3+1*/,
+    0x352d3342 /*B3-5*/, 0x352b3342 /*B3+5*/, 0x332d3542 /*B5-3*/, 0x332b3542 /*B5+3*/,
+    0x372d3542 /*B5-7*/, 0x372b3542 /*B5+7*/, 0x352d3742 /*B7-5*/, 0x352b3742 /*B7+5*/,
+    0x392d3742 /*B7-9*/, 0x392b3742 /*B7+9*/, 0x372d3942 /*B9-7*/, 0x372b3942 /*B9+7*/,
+    0x503d3441 /*A4=P*/, 0x503d3641 /*A6=P*/, 0x503d3342 /*B3=P*/, 0x503d3742 /*B7=P*/
 };
 
-// ¹Ì¶¨×İÏß±íÊ¾µÄ×ø±êÊı×é
+// å›ºå®šçºµçº¿è¡¨ç¤ºçš„åæ ‡æ•°ç»„
 static const uint8_t cucFixMove[28][2] = {
-  {0xa8, 0xb7}, {0xc8, 0xb7}, {0xb7, 0xc8}, {0xb7, 0xa8}, {0xb7, 0xc6}, {0xb7, 0xa6}, {0xa6, 0xb7}, {0xc6, 0xb7},
-  {0xab, 0xc9}, {0xab, 0x89}, {0x89, 0xab}, {0xc9, 0xab}, {0x89, 0xa7}, {0xc9, 0xa7}, {0xa7, 0xc9}, {0xa7, 0x89},
-  {0xa7, 0xc5}, {0xa7, 0x85}, {0x85, 0xa7}, {0xc5, 0xa7}, {0x85, 0xa3}, {0xc5, 0xa3}, {0xa3, 0xc5}, {0xa3, 0x85},
-  {0xc8, 0xc8}, {0xc6, 0xc6}, {0xc9, 0xc9}, {0xc5, 0xc5}
-};
+    {0xa8, 0xb7}, {0xc8, 0xb7}, {0xb7, 0xc8}, {0xb7, 0xa8}, {0xb7, 0xc6}, {0xb7, 0xa6}, {0xa6, 0xb7}, {0xc6, 0xb7}, {0xab, 0xc9}, {0xab, 0x89}, {0x89, 0xab}, {0xc9, 0xab}, {0x89, 0xa7}, {0xc9, 0xa7}, {0xa7, 0xc9}, {0xa7, 0x89}, {0xa7, 0xc5}, {0xa7, 0x85}, {0x85, 0xa7}, {0xc5, 0xa7}, {0x85, 0xa3}, {0xc5, 0xa3}, {0xa3, 0xc5}, {0xa3, 0x85}, {0xc8, 0xc8}, {0xc6, 0xc6}, {0xc9, 0xc9}, {0xc5, 0xc5}};
 
-// ¼òÌåÎÄ±¾ÆåÅÌµÄÆåÅÌ×Ö·û
+// ç®€ä½“æ–‡æœ¬æ£‹ç›˜çš„æ£‹ç›˜å­—ç¬¦
 static const char *cszBoardStrSimp[19] = {
-  " ©°--©Ğ--©Ğ--©Ğ--©Ğ--©Ğ--©Ğ--©Ğ--©´ ",
-  " ©¦  ©¦  ©¦  ©¦£Ü©¦£¯©¦  ©¦  ©¦  ©¦ ",
-  " ©À--©à--©à--©à--¡ù--©à--©à--©à--©È ",
-  " ©¦  ©¦  ©¦  ©¦£¯©¦£Ü©¦  ©¦  ©¦  ©¦ ",
-  " ©À--©à--©à--©à--©à--©à--©à--©à--©È ",
-  " ©¦  ©¦  ©¦  ©¦  ©¦  ©¦  ©¦  ©¦  ©¦ ",
-  " ©À--©à--©à--©à--©à--©à--©à--©à--©È ",
-  " ©¦  ©¦  ©¦  ©¦  ©¦  ©¦  ©¦  ©¦  ©¦ ",
-  " ©À--©Ø--©Ø--©Ø--©Ø--©Ø--©Ø--©Ø--©È ",
-  " ©¦                              ©¦ ",
-  " ©À--©Ğ--©Ğ--©Ğ--©Ğ--©Ğ--©Ğ--©Ğ--©È ",
-  " ©¦  ©¦  ©¦  ©¦  ©¦  ©¦  ©¦  ©¦  ©¦ ",
-  " ©À--©à--©à--©à--©à--©à--©à--©à--©È ",
-  " ©¦  ©¦  ©¦  ©¦  ©¦  ©¦  ©¦  ©¦  ©¦ ",
-  " ©À--©à--©à--©à--©à--©à--©à--©à--©È ",
-  " ©¦  ©¦  ©¦  ©¦£Ü©¦£¯©¦  ©¦  ©¦  ©¦ ",
-  " ©À--©à--©à--©à--¡ù--©à--©à--©à--©È ",
-  " ©¦  ©¦  ©¦  ©¦£¯©¦£Ü©¦  ©¦  ©¦  ©¦ ",
-  " ©¸--©Ø--©Ø--©Ø--©Ø--©Ø--©Ø--©Ø--©¼ "
-};
+    " â”Œ--â”¬--â”¬--â”¬--â”¬--â”¬--â”¬--â”¬--â” ",
+    " â”‚  â”‚  â”‚  â”‚ï¼¼â”‚ï¼â”‚  â”‚  â”‚  â”‚ ",
+    " â”œ--â”¼--â”¼--â”¼--â€»--â”¼--â”¼--â”¼--â”¤ ",
+    " â”‚  â”‚  â”‚  â”‚ï¼â”‚ï¼¼â”‚  â”‚  â”‚  â”‚ ",
+    " â”œ--â”¼--â”¼--â”¼--â”¼--â”¼--â”¼--â”¼--â”¤ ",
+    " â”‚  â”‚  â”‚  â”‚  â”‚  â”‚  â”‚  â”‚  â”‚ ",
+    " â”œ--â”¼--â”¼--â”¼--â”¼--â”¼--â”¼--â”¼--â”¤ ",
+    " â”‚  â”‚  â”‚  â”‚  â”‚  â”‚  â”‚  â”‚  â”‚ ",
+    " â”œ--â”´--â”´--â”´--â”´--â”´--â”´--â”´--â”¤ ",
+    " â”‚                              â”‚ ",
+    " â”œ--â”¬--â”¬--â”¬--â”¬--â”¬--â”¬--â”¬--â”¤ ",
+    " â”‚  â”‚  â”‚  â”‚  â”‚  â”‚  â”‚  â”‚  â”‚ ",
+    " â”œ--â”¼--â”¼--â”¼--â”¼--â”¼--â”¼--â”¼--â”¤ ",
+    " â”‚  â”‚  â”‚  â”‚  â”‚  â”‚  â”‚  â”‚  â”‚ ",
+    " â”œ--â”¼--â”¼--â”¼--â”¼--â”¼--â”¼--â”¼--â”¤ ",
+    " â”‚  â”‚  â”‚  â”‚ï¼¼â”‚ï¼â”‚  â”‚  â”‚  â”‚ ",
+    " â”œ--â”¼--â”¼--â”¼--â€»--â”¼--â”¼--â”¼--â”¤ ",
+    " â”‚  â”‚  â”‚  â”‚ï¼â”‚ï¼¼â”‚  â”‚  â”‚  â”‚ ",
+    " â””--â”´--â”´--â”´--â”´--â”´--â”´--â”´--â”˜ "};
 
-// ·±ÌåÎÄ±¾ÆåÅÌµÄÆåÅÌ×Ö·û
+// ç¹ä½“æ–‡æœ¬æ£‹ç›˜çš„æ£‹ç›˜å­—ç¬¦
 static const char *cszBoardStrTrad[19] = {
-  " ¢z--¢s--¢s--¢s--¢s--¢s--¢s--¢s--¢{ ",
-  " ¢x  ¢x  ¢x  ¢x¢@¢x¡ş¢x  ¢x  ¢x  ¢x ",
-  " ¢u--¢q--¢q--¢q--¡°--¢q--¢q--¢q--¢t ",
-  " ¢x  ¢x  ¢x  ¢x¡ş¢x¢@¢x  ¢x  ¢x  ¢x ",
-  " ¢u--¢q--¢q--¢q--¢q--¢q--¢q--¢q--¢t ",
-  " ¢x  ¢x  ¢x  ¢x  ¢x  ¢x  ¢x  ¢x  ¢x ",
-  " ¢u--¢q--¢q--¢q--¢q--¢q--¢q--¢q--¢t ",
-  " ¢x  ¢x  ¢x  ¢x  ¢x  ¢x  ¢x  ¢x  ¢x ",
-  " ¢u--¢r--¢r--¢r--¢r--¢r--¢r--¢r--¢t ",
-  " ¢x                              ¢x ",
-  " ¢u--¢s--¢s--¢s--¢s--¢s--¢s--¢s--¢t ",
-  " ¢x  ¢x  ¢x  ¢x  ¢x  ¢x  ¢x  ¢x  ¢x ",
-  " ¢u--¢q--¢q--¢q--¢q--¢q--¢q--¢q--¢t ",
-  " ¢x  ¢x  ¢x  ¢x  ¢x  ¢x  ¢x  ¢x  ¢x ",
-  " ¢u--¢q--¢q--¢q--¢q--¢q--¢q--¢q--¢t ",
-  " ¢x  ¢x  ¢x  ¢x¢@¢x¡ş¢x  ¢x  ¢x  ¢x ",
-  " ¢u--¢q--¢q--¢q--¡°--¢q--¢q--¢q--¢t ",
-  " ¢x  ¢x  ¢x  ¢x¡ş¢x¢@¢x  ¢x  ¢x  ¢x ",
-  " ¢|--¢r--¢r--¢r--¢r--¢r--¢r--¢r--¢} "
-};
+    " ï¿½z--ï¿½s--ï¿½s--ï¿½s--ï¿½s--ï¿½s--ï¿½s--ï¿½s--ï¿½{ ",
+    " ï¿½x  ï¿½x  ï¿½x  ï¿½xï¿½@ï¿½xã€“ï¿½x  ï¿½x  ï¿½x  ï¿½x ",
+    " ï¿½u--ï¿½q--ï¿½q--ï¿½q--â€œ--ï¿½q--ï¿½q--ï¿½q--ï¿½t ",
+    " ï¿½x  ï¿½x  ï¿½x  ï¿½xã€“ï¿½xï¿½@ï¿½x  ï¿½x  ï¿½x  ï¿½x ",
+    " ï¿½u--ï¿½q--ï¿½q--ï¿½q--ï¿½q--ï¿½q--ï¿½q--ï¿½q--ï¿½t ",
+    " ï¿½x  ï¿½x  ï¿½x  ï¿½x  ï¿½x  ï¿½x  ï¿½x  ï¿½x  ï¿½x ",
+    " ï¿½u--ï¿½q--ï¿½q--ï¿½q--ï¿½q--ï¿½q--ï¿½q--ï¿½q--ï¿½t ",
+    " ï¿½x  ï¿½x  ï¿½x  ï¿½x  ï¿½x  ï¿½x  ï¿½x  ï¿½x  ï¿½x ",
+    " ï¿½u--ï¿½r--ï¿½r--ï¿½r--ï¿½r--ï¿½r--ï¿½r--ï¿½r--ï¿½t ",
+    " ï¿½x                              ï¿½x ",
+    " ï¿½u--ï¿½s--ï¿½s--ï¿½s--ï¿½s--ï¿½s--ï¿½s--ï¿½s--ï¿½t ",
+    " ï¿½x  ï¿½x  ï¿½x  ï¿½x  ï¿½x  ï¿½x  ï¿½x  ï¿½x  ï¿½x ",
+    " ï¿½u--ï¿½q--ï¿½q--ï¿½q--ï¿½q--ï¿½q--ï¿½q--ï¿½q--ï¿½t ",
+    " ï¿½x  ï¿½x  ï¿½x  ï¿½x  ï¿½x  ï¿½x  ï¿½x  ï¿½x  ï¿½x ",
+    " ï¿½u--ï¿½q--ï¿½q--ï¿½q--ï¿½q--ï¿½q--ï¿½q--ï¿½q--ï¿½t ",
+    " ï¿½x  ï¿½x  ï¿½x  ï¿½xï¿½@ï¿½xã€“ï¿½x  ï¿½x  ï¿½x  ï¿½x ",
+    " ï¿½u--ï¿½q--ï¿½q--ï¿½q--â€œ--ï¿½q--ï¿½q--ï¿½q--ï¿½t ",
+    " ï¿½x  ï¿½x  ï¿½x  ï¿½xã€“ï¿½xï¿½@ï¿½x  ï¿½x  ï¿½x  ï¿½x ",
+    " ï¿½|--ï¿½r--ï¿½r--ï¿½r--ï¿½r--ï¿½r--ï¿½r--ï¿½r--ï¿½} "};
 
-/* ÒÔÏÂÁ½¸öÊı×éÊµÏÖÁËÄÚ²¿ÆåÅÌ×ø±ê(Square)ºÍ×İÏßÓÅÏÈ×ø±ê(FileSq)µÄ×ª»»¡£
+/* ä»¥ä¸‹ä¸¤ä¸ªæ•°ç»„å®ç°äº†å†…éƒ¨æ£‹ç›˜åæ ‡(Square)å’Œçºµçº¿ä¼˜å…ˆåæ ‡(FileSq)çš„è½¬æ¢ã€‚
  *
- * ÄÚ²¿ÆåÅÌ×ø±êÊÇÓĞ3²ã±ß½çµÄ16x16ÈßÓàÊı×é(²ÎÔÄ"pregen.cpp")£¬Îª·½±ã×ª»»³É×İÏß¸ñÊ½£¬
- * Òª¶ÔËüÃÇÖØĞÂ±àºÅ£¬¼´°´ÁĞÓÅÏÈ´ÓÓÒµ½×ó£¬ÏàÍ¬µÄÁĞÔÙ´ÓÇ°µ½ºóµÄË³Ğò(²ÎÔÄ¡¶¹æ·¶¡·)¡£
- * ×ª»»ºóµÄ×ø±êÈÔÈ»ÊÇ16x16µÄÈßÓàÊı×é£¬Õû³ı16ºó¾ÍÊÇÁĞºÅ(ÓÒ±ßÏßÊÇ0)£¬¶Ô16È¡Óà¾ÍÊÇĞĞºÅ(ÉÏ±ßÏßÊÇ0)¡£
+ * å†…éƒ¨æ£‹ç›˜åæ ‡æ˜¯æœ‰3å±‚è¾¹ç•Œçš„16x16å†—ä½™æ•°ç»„(å‚é˜…"pregen.cpp")ï¼Œä¸ºæ–¹ä¾¿è½¬æ¢æˆçºµçº¿æ ¼å¼ï¼Œ
+ * è¦å¯¹å®ƒä»¬é‡æ–°ç¼–å·ï¼Œå³æŒ‰åˆ—ä¼˜å…ˆä»å³åˆ°å·¦ï¼Œç›¸åŒçš„åˆ—å†ä»å‰åˆ°åçš„é¡ºåº(å‚é˜…ã€Šè§„èŒƒã€‹)ã€‚
+ * è½¬æ¢åçš„åæ ‡ä»ç„¶æ˜¯16x16çš„å†—ä½™æ•°ç»„ï¼Œæ•´é™¤16åå°±æ˜¯åˆ—å·(å³è¾¹çº¿æ˜¯0)ï¼Œå¯¹16å–ä½™å°±æ˜¯è¡Œå·(ä¸Šè¾¹çº¿æ˜¯0)ã€‚
  */
 
 static const uint8_t cucSquare2FileSq[256] = {
-  0, 0, 0,    0,    0,    0,    0,    0,    0,    0,    0,    0, 0, 0, 0, 0,
-  0, 0, 0,    0,    0,    0,    0,    0,    0,    0,    0,    0, 0, 0, 0, 0,
-  0, 0, 0,    0,    0,    0,    0,    0,    0,    0,    0,    0, 0, 0, 0, 0,
-  0, 0, 0, 0x80, 0x70, 0x60, 0x50, 0x40, 0x30, 0x20, 0x10, 0x00, 0, 0, 0, 0,
-  0, 0, 0, 0x81, 0x71, 0x61, 0x51, 0x41, 0x31, 0x21, 0x11, 0x01, 0, 0, 0, 0,
-  0, 0, 0, 0x82, 0x72, 0x62, 0x52, 0x42, 0x32, 0x22, 0x12, 0x02, 0, 0, 0, 0,
-  0, 0, 0, 0x83, 0x73, 0x63, 0x53, 0x43, 0x33, 0x23, 0x13, 0x03, 0, 0, 0, 0,
-  0, 0, 0, 0x84, 0x74, 0x64, 0x54, 0x44, 0x34, 0x24, 0x14, 0x04, 0, 0, 0, 0,
-  0, 0, 0, 0x85, 0x75, 0x65, 0x55, 0x45, 0x35, 0x25, 0x15, 0x05, 0, 0, 0, 0,
-  0, 0, 0, 0x86, 0x76, 0x66, 0x56, 0x46, 0x36, 0x26, 0x16, 0x06, 0, 0, 0, 0,
-  0, 0, 0, 0x87, 0x77, 0x67, 0x57, 0x47, 0x37, 0x27, 0x17, 0x07, 0, 0, 0, 0,
-  0, 0, 0, 0x88, 0x78, 0x68, 0x58, 0x48, 0x38, 0x28, 0x18, 0x08, 0, 0, 0, 0,
-  0, 0, 0, 0x89, 0x79, 0x69, 0x59, 0x49, 0x39, 0x29, 0x19, 0x09, 0, 0, 0, 0,
-  0, 0, 0,    0,    0,    0,    0,    0,    0,    0,    0,    0, 0, 0, 0, 0,
-  0, 0, 0,    0,    0,    0,    0,    0,    0,    0,    0,    0, 0, 0, 0, 0,
-  0, 0, 0,    0,    0,    0,    0,    0,    0,    0,    0,    0, 0, 0, 0, 0
-};
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0x80, 0x70, 0x60, 0x50, 0x40, 0x30, 0x20, 0x10, 0x00, 0, 0, 0, 0,
+    0, 0, 0, 0x81, 0x71, 0x61, 0x51, 0x41, 0x31, 0x21, 0x11, 0x01, 0, 0, 0, 0,
+    0, 0, 0, 0x82, 0x72, 0x62, 0x52, 0x42, 0x32, 0x22, 0x12, 0x02, 0, 0, 0, 0,
+    0, 0, 0, 0x83, 0x73, 0x63, 0x53, 0x43, 0x33, 0x23, 0x13, 0x03, 0, 0, 0, 0,
+    0, 0, 0, 0x84, 0x74, 0x64, 0x54, 0x44, 0x34, 0x24, 0x14, 0x04, 0, 0, 0, 0,
+    0, 0, 0, 0x85, 0x75, 0x65, 0x55, 0x45, 0x35, 0x25, 0x15, 0x05, 0, 0, 0, 0,
+    0, 0, 0, 0x86, 0x76, 0x66, 0x56, 0x46, 0x36, 0x26, 0x16, 0x06, 0, 0, 0, 0,
+    0, 0, 0, 0x87, 0x77, 0x67, 0x57, 0x47, 0x37, 0x27, 0x17, 0x07, 0, 0, 0, 0,
+    0, 0, 0, 0x88, 0x78, 0x68, 0x58, 0x48, 0x38, 0x28, 0x18, 0x08, 0, 0, 0, 0,
+    0, 0, 0, 0x89, 0x79, 0x69, 0x59, 0x49, 0x39, 0x29, 0x19, 0x09, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 static const uint8_t cucFileSq2Square[256] = {
-  0x3b, 0x4b, 0x5b, 0x6b, 0x7b, 0x8b, 0x9b, 0xab, 0xbb, 0xcb, 0, 0, 0, 0, 0, 0,
-  0x3a, 0x4a, 0x5a, 0x6a, 0x7a, 0x8a, 0x9a, 0xaa, 0xba, 0xca, 0, 0, 0, 0, 0, 0,
-  0x39, 0x49, 0x59, 0x69, 0x79, 0x89, 0x99, 0xa9, 0xb9, 0xc9, 0, 0, 0, 0, 0, 0,
-  0x38, 0x48, 0x58, 0x68, 0x78, 0x88, 0x98, 0xa8, 0xb8, 0xc8, 0, 0, 0, 0, 0, 0,
-  0x37, 0x47, 0x57, 0x67, 0x77, 0x87, 0x97, 0xa7, 0xb7, 0xc7, 0, 0, 0, 0, 0, 0,
-  0x36, 0x46, 0x56, 0x66, 0x76, 0x86, 0x96, 0xa6, 0xb6, 0xc6, 0, 0, 0, 0, 0, 0,
-  0x35, 0x45, 0x55, 0x65, 0x75, 0x85, 0x95, 0xa5, 0xb5, 0xc5, 0, 0, 0, 0, 0, 0,
-  0x34, 0x44, 0x54, 0x64, 0x74, 0x84, 0x94, 0xa4, 0xb4, 0xc4, 0, 0, 0, 0, 0, 0,
-  0x33, 0x43, 0x53, 0x63, 0x73, 0x83, 0x93, 0xa3, 0xb3, 0xc3, 0, 0, 0, 0, 0, 0,
-     0,    0,    0,    0,    0,    0,    0,    0,    0,    0, 0, 0, 0, 0, 0, 0,
-     0,    0,    0,    0,    0,    0,    0,    0,    0,    0, 0, 0, 0, 0, 0, 0,
-     0,    0,    0,    0,    0,    0,    0,    0,    0,    0, 0, 0, 0, 0, 0, 0,
-     0,    0,    0,    0,    0,    0,    0,    0,    0,    0, 0, 0, 0, 0, 0, 0,
-     0,    0,    0,    0,    0,    0,    0,    0,    0,    0, 0, 0, 0, 0, 0, 0,
-     0,    0,    0,    0,    0,    0,    0,    0,    0,    0, 0, 0, 0, 0, 0, 0
-};
+    0x3b, 0x4b, 0x5b, 0x6b, 0x7b, 0x8b, 0x9b, 0xab, 0xbb, 0xcb, 0, 0, 0, 0, 0, 0,
+    0x3a, 0x4a, 0x5a, 0x6a, 0x7a, 0x8a, 0x9a, 0xaa, 0xba, 0xca, 0, 0, 0, 0, 0, 0,
+    0x39, 0x49, 0x59, 0x69, 0x79, 0x89, 0x99, 0xa9, 0xb9, 0xc9, 0, 0, 0, 0, 0, 0,
+    0x38, 0x48, 0x58, 0x68, 0x78, 0x88, 0x98, 0xa8, 0xb8, 0xc8, 0, 0, 0, 0, 0, 0,
+    0x37, 0x47, 0x57, 0x67, 0x77, 0x87, 0x97, 0xa7, 0xb7, 0xc7, 0, 0, 0, 0, 0, 0,
+    0x36, 0x46, 0x56, 0x66, 0x76, 0x86, 0x96, 0xa6, 0xb6, 0xc6, 0, 0, 0, 0, 0, 0,
+    0x35, 0x45, 0x55, 0x65, 0x75, 0x85, 0x95, 0xa5, 0xb5, 0xc5, 0, 0, 0, 0, 0, 0,
+    0x34, 0x44, 0x54, 0x64, 0x74, 0x84, 0x94, 0xa4, 0xb4, 0xc4, 0, 0, 0, 0, 0, 0,
+    0x33, 0x43, 0x53, 0x63, 0x73, 0x83, 0x93, 0xa3, 0xb3, 0xc3, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-// ºº×Ö·ûºÅµÄÖ¸Õë£¬¼´¹æ¶¨ÁË¼òÌå»¹ÊÇ·±Ìå£¬ÓÉ"ChineseInit()"½øĞĞ¸³Öµ
+// æ±‰å­—ç¬¦å·çš„æŒ‡é’ˆï¼Œå³è§„å®šäº†ç®€ä½“è¿˜æ˜¯ç¹ä½“ï¼Œç”±"ChineseInit()"è¿›è¡Œèµ‹å€¼
 static const uint16_t (*lpcwDigit2Word)[10], (*lpcwPiece2Word)[8], *lpcwDirect2Word, *lpcwPos2Word;
 static const char **lpcszBoardStr;
 static uint16_t wPromote;
 
-inline uint8_t SQUARE_FILESQ(int sq) {
-  return cucSquare2FileSq[sq];
+inline uint8_t SQUARE_FILESQ(int sq)
+{
+    return cucSquare2FileSq[sq];
 }
 
-inline uint8_t FILESQ_SQUARE(int sq) {
-  return cucFileSq2Square[sq];
+inline uint8_t FILESQ_SQUARE(int sq)
+{
+    return cucFileSq2Square[sq];
 }
 
-inline int FILESQ_RANK_Y(int sq) {
-  return sq & 15;
+inline int FILESQ_RANK_Y(int sq)
+{
+    return sq & 15;
 }
 
-inline int FILESQ_FILE_X(int sq) {
-  return sq >> 4;
+inline int FILESQ_FILE_X(int sq)
+{
+    return sq >> 4;
 }
 
-inline int FILESQ_COORD_XY(int x, int y) {
-  return (x << 4) + y;
+inline int FILESQ_COORD_XY(int x, int y)
+{
+    return (x << 4) + y;
 }
 
-// »ñµÃÄ³¸öÆå×Ó¶ÔÓÚ±¾·½ÊÓ½ÇµÄ×İÏßÓÅÏÈ×ø±ê£¬Æå×Ó±àºÅ´Ó0µ½15
-inline int FILESQ_SIDE_PIECE(const PositionStruct &pos, int nPieceNum) {
-  int sq;
-  sq = pos.ucsqPieces[SIDE_TAG(pos.sdPlayer) + nPieceNum];
-  return (sq == 0 ? -1 : pos.sdPlayer == 0 ? SQUARE_FILESQ(sq) : SQUARE_FILESQ(SQUARE_FLIP(sq)));
+// è·å¾—æŸä¸ªæ£‹å­å¯¹äºæœ¬æ–¹è§†è§’çš„çºµçº¿ä¼˜å…ˆåæ ‡ï¼Œæ£‹å­ç¼–å·ä»0åˆ°15
+inline int FILESQ_SIDE_PIECE(const PositionStruct &pos, int nPieceNum)
+{
+    int sq;
+    sq = pos.ucsqPieces[SIDE_TAG(pos.sdPlayer) + nPieceNum];
+    return (sq == 0 ? -1 : pos.sdPlayer == 0 ? SQUARE_FILESQ(sq)
+                                             : SQUARE_FILESQ(SQUARE_FLIP(sq)));
 }
 
-// ¸ù¾İ×ÓÁ¦ÀàĞÍ»ñµÃÆå×ÓµÄ±àºÅ
-inline int FIRST_PIECE(int pt, int pc) {
-  return pt * 2 - 1 + pc;
+// æ ¹æ®å­åŠ›ç±»å‹è·å¾—æ£‹å­çš„ç¼–å·
+inline int FIRST_PIECE(int pt, int pc)
+{
+    return pt * 2 - 1 + pc;
 }
 
-/* ÒÔÏÂº¯ÊıÊµÏÖÁËÊı×Ö¡¢Æå×Ó¡¢·½ÏòºÍÎ»ÖÃµÄ±àÂëºÍ·ûºÅ¡¢±àÂëºÍºº×ÖÖ®¼äµÄ×ª»»
- * 
- * ²¿·Ö·ûºÅ±àÂë×ª»»µÄ´úÂë£¬ÀûÓÃÁË"position.cpp"ÖĞµÄ"PIECE_BYTE"Êı×éºÍ"FenPiece()"º¯Êı¡£
- * ´Óºº×Ö×ª»»Îª±àÂëÊÇÄÑµã£¬ÎŞÂÛ´¦ÓÚ¼òÌå×´Ì¬»¹ÊÇ·±Ìå×´Ì¬£¬×ª»»Ê±¼È¿¼ÂÇÁË¼òÌå¡¢·±ÌåºÍÒìÌå£¬Ò²¿¼ÂÇÁËGBKÂëºÍBIG5Âë£¬
- * Òò´Ë³ıÁËÒÀ´Î±È½Ïºº×ÖÊı×éÍâ£¬»¹Ôö¼ÓÁË¶ÔGBKÂë·±Ìå×ÖºÍÒìÌå×ÖµÄÊ¶±ğ¡£
+/* ä»¥ä¸‹å‡½æ•°å®ç°äº†æ•°å­—ã€æ£‹å­ã€æ–¹å‘å’Œä½ç½®çš„ç¼–ç å’Œç¬¦å·ã€ç¼–ç å’Œæ±‰å­—ä¹‹é—´çš„è½¬æ¢
+ *
+ * éƒ¨åˆ†ç¬¦å·ç¼–ç è½¬æ¢çš„ä»£ç ï¼Œåˆ©ç”¨äº†"position.cpp"ä¸­çš„"PIECE_BYTE"æ•°ç»„å’Œ"FenPiece()"å‡½æ•°ã€‚
+ * ä»æ±‰å­—è½¬æ¢ä¸ºç¼–ç æ˜¯éš¾ç‚¹ï¼Œæ— è®ºå¤„äºç®€ä½“çŠ¶æ€è¿˜æ˜¯ç¹ä½“çŠ¶æ€ï¼Œè½¬æ¢æ—¶æ—¢è€ƒè™‘äº†ç®€ä½“ã€ç¹ä½“å’Œå¼‚ä½“ï¼Œä¹Ÿè€ƒè™‘äº†GBKç å’ŒBIG5ç ï¼Œ
+ * å› æ­¤é™¤äº†ä¾æ¬¡æ¯”è¾ƒæ±‰å­—æ•°ç»„å¤–ï¼Œè¿˜å¢åŠ äº†å¯¹GBKç ç¹ä½“å­—å’Œå¼‚ä½“å­—çš„è¯†åˆ«ã€‚
  */
 
-inline int Digit2Byte(int nArg) {
-  return nArg + '1';
+inline int Digit2Byte(int nArg)
+{
+    return nArg + '1';
 }
 
-inline int Byte2Digit(int nArg) {
-  return (nArg >= '1' && nArg <= '9' ? nArg - '1' : MAX_DIGIT);
+inline int Byte2Digit(int nArg)
+{
+    return (nArg >= '1' && nArg <= '9' ? nArg - '1' : MAX_DIGIT);
 }
 
-inline int Piece2Byte(int nArg) {
-  return PIECE_BYTE(nArg);
+inline int Piece2Byte(int nArg)
+{
+    return PIECE_BYTE(nArg);
 }
 
-inline int Byte2Piece(int nArg) {
-  return (nArg >= '1' && nArg <= '7' ? nArg - '1' : nArg >= 'A' && nArg <= 'Z' ? FenPiece(nArg) :
-      nArg >= 'a' && nArg <= 'z' ? FenPiece(nArg - 'a' + 'A') : MAX_PIECE);
+inline int Byte2Piece(int nArg)
+{
+    return (nArg >= '1' && nArg <= '7' ? nArg - '1' : nArg >= 'A' && nArg <= 'Z' ? FenPiece(nArg)
+                                                  : nArg >= 'a' && nArg <= 'z'   ? FenPiece(nArg - 'a' + 'A')
+                                                                                 : MAX_PIECE);
 }
 
-inline int Byte2Direct(int nArg) {
-  return (nArg == '+' ? 0 : nArg == '.' || nArg == '=' ? 1 : nArg == '-' ? 2 : 3);
+inline int Byte2Direct(int nArg)
+{
+    return (nArg == '+' ? 0 : nArg == '.' || nArg == '=' ? 1
+                          : nArg == '-'                  ? 2
+                                                         : 3);
 }
 
-inline int Byte2Pos(int nArg) {
-  return (nArg >= 'a' && nArg <= 'e' ? nArg - 'a' : Byte2Direct(nArg) + DIRECT_TO_POS);
+inline int Byte2Pos(int nArg)
+{
+    return (nArg >= 'a' && nArg <= 'e' ? nArg - 'a' : Byte2Direct(nArg) + DIRECT_TO_POS);
 }
 
-static int Word2Digit(int nArg) {
-  int i;
-  for (i = 0; i < MAX_DIGIT; i ++) {
-    if (nArg == cwDigit2WordSimp[0][i] || nArg == cwDigit2WordSimp[1][i] ||
-        nArg == cwDigit2WordTrad[0][i] || nArg == cwDigit2WordTrad[1][i]) {
-      break;
-    }
-  }
-  return i;
-}
-
-static int Word2Piece(int nArg) {
-  int i;
-  if (false) {
-  } else if (nArg == 0x9b8e/*›*/ || nArg == 0xa28c/*Œ¢*/) {
-    return 0;
-  } else if (nArg == 0x52f1/*ñR*/ || nArg == 0xd882/*‚Ø*/ || nArg == 0x58d8/*ØX[‚Ø]*/) {
-    return 3;
-  } else if (nArg == 0x87dc/*Ü‡*/ || nArg == 0x8cb3/*³Œ*/ || nArg == 0xcfda/*ÚÏ[³Œ]*/ || nArg == 0x6582 /*‚e*/) {
-    return 4;
-  } else if (nArg == 0xfcb0/*°ü*/ || nArg == 0x5da5/*¥][°ü]*/ || nArg == 0x68b3/*³h*/ || nArg == 0xa5af/*¯¥[³h]*/) {
-    return 5;
-  } else {
-    for (i = 0; i < MAX_PIECE; i ++) {
-      if (nArg == cwPiece2WordSimp[0][i] || nArg == cwPiece2WordSimp[1][i] ||
-          nArg == cwPiece2WordTrad[0][i] || nArg == cwPiece2WordTrad[1][i]) {
-        break;
-      }
-    }
-    return i;
-  }
-}
-
-static int Word2Direct(int nArg) {
-  int i;
-  if (nArg == 0x4ddf/*ßM*/) {
-    return 0;
-  } else {
-    for (i = 0; i < MAX_DIRECT; i ++) {
-      if (nArg == cwDirect2WordSimp[i] || nArg == cwDirect2WordTrad[i]) {
-        break;
-      }
-    }
-    return i;
-  }
-}
-
-static int Word2Pos(int nArg) {
-  int i;
-  if (nArg == 0xe1e1/*áá*/ || nArg == 0x5aa6/*¦Z[ºó]*/) {
-    return 2 + DIRECT_TO_POS;
-  } else {
-    for (i = 0; i < MAX_POS; i ++) {
-      if (nArg == cwPos2WordSimp[i] || nArg == cwPos2WordTrad[i]) {
-        break;
-      }
-    }
-    return i;
-  }
-}
-
-// È·¶¨Ê¹ÓÃ¼òÌåºº×ÖºÍ·±Ìåºº×Ö
-void ChineseInit(bool bTraditional) {
-  if (bTraditional) {
-    lpcwDigit2Word = cwDigit2WordTrad;
-    lpcwPiece2Word = cwPiece2WordTrad;
-    lpcwDirect2Word = cwDirect2WordTrad;
-    lpcwPos2Word = cwPos2WordTrad;
-    lpcszBoardStr = cszBoardStrTrad;
-    wPromote = 0xdcc5/*ÅÜ*/;
-  } else {
-    lpcwDigit2Word = cwDigit2WordSimp;
-    lpcwPiece2Word = cwPiece2WordSimp;
-    lpcwDirect2Word = cwDirect2WordSimp;
-    lpcwPos2Word = cwPos2WordSimp;
-    lpcszBoardStr = cszBoardStrSimp;
-    wPromote = 0xe4b1/*±ä*/;
-  }
-}
-
-// ³¢ÊÔÄ³¸ö×Å·¨£¬²¢·µ»Ø×Å·¨×´Ì¬£¬²ÎÔÄ"cchess.h"
-bool TryMove(PositionStruct &pos, int &nStatus, int mv) {
-  if (!pos.LegalMove(mv)) {
-    nStatus = MOVE_ILLEGAL;
-    return false;
-  }
-  if (!pos.MakeMove(mv)) {
-    nStatus = MOVE_INCHECK;
-    return false;
-  }
-  nStatus = 0;
-  nStatus += (pos.LastMove().CptDrw > 0 ? MOVE_CAPTURE : 0);
-  nStatus += (pos.LastMove().ChkChs > 0 ? MOVE_CHECK : 0);
-  nStatus += (pos.IsMate() ? MOVE_MATE : 0);
-  nStatus += pos.RepStatus(3) * MOVE_PERPETUAL; // ÌáÊ¾£º²ÎÔÄ"position.cpp"ÖĞµÄ"IsRep()"º¯Êı
-  nStatus += (pos.IsDraw() ? MOVE_DRAW : 0);
-  return true;
-}
-
-// ¾ÖÃæ¾µÏñ
-
-// ºìºÚ»¥»»
-void ExchangeSide(PositionStruct &pos) {
-  int i, sq;
-  uint8_t ucsqList[32];
-  for (i = 16; i < 48; i ++) {
-    sq = pos.ucsqPieces[i];
-    ucsqList[i - 16] = sq;
-    if (sq != 0) {
-      pos.AddPiece(sq, i, DEL_PIECE);
-    }
-  }
-  for (i = 16; i < 48; i ++) {
-    sq = ucsqList[i < 32 ? i : i - 32]; // ÕâĞĞ²»Í¬ÓÚFlipBoard
-    if (sq != 0) {
-      pos.AddPiece(SQUARE_FLIP(sq), i);
-    }
-  }
-  pos.ChangeSide(); // ÕâĞĞ²»Í¬ÓÚFlipBoard
-}
-
-// ·­×ªÆåÅÌ
-void FlipBoard(PositionStruct &pos) {
-  int i, sq;
-  uint8_t ucsqList[32];
-  for (i = 16; i < 48; i ++) {
-    sq = pos.ucsqPieces[i];
-    ucsqList[i - 16] = sq;
-    if (sq != 0) {
-      pos.AddPiece(sq, i, DEL_PIECE);
-    }
-  }
-  for (i = 16; i < 48; i ++) {
-    sq = ucsqList[i - 16]; // ÕâĞĞ²»Í¬ÓÚExchangeSide
-    if (sq != 0) {
-      pos.AddPiece(SQUARE_FLIP(sq), i);
-    }
-  }
-}
-
-// Éú³ÉÎÄ±¾ÆåÅÌ(ºì×ÓÓÃ()±íÊ¾£¬ºÚ×ÓÓÃ[]±íÊ¾)
-void BoardText(char *szBoard, const PositionStruct &pos, bool bAnsi) {
-  char *lpBoard;
-  int i, j, pc;
-
-  lpBoard = szBoard;
-  if (bAnsi) {
-    lpBoard += sprintf(lpBoard, "\33[0m");
-  }
-  for (i = 0; i < 19; i ++) {
-    if (i % 2 == 0) {
-      for (j = FILE_LEFT; j <= FILE_RIGHT; j ++) {
-        pc = pos.ucpcSquares[COORD_XY(j, i / 2 + RANK_TOP)];
-        if ((pc & SIDE_TAG(0)) != 0) {
-          lpBoard += sprintf(lpBoard, bAnsi ? "(\33[1;31m%.2s\33[0m)" :
-              "(%.2s)", (const char *) &lpcwPiece2Word[0][PIECE_TYPE(pc)]);
-        } else if ((pc & SIDE_TAG(1)) != 0) {
-          lpBoard += sprintf(lpBoard, bAnsi ? "[\33[1;32m%.2s\33[0m]" :
-              "[%.2s]", (const char *) &lpcwPiece2Word[1][PIECE_TYPE(pc)]);
-        } else {
-          lpBoard += sprintf(lpBoard, "%.4s", lpcszBoardStr[i] + (j - FILE_LEFT) * 4);
+static int Word2Digit(int nArg)
+{
+    int i;
+    for (i = 0; i < MAX_DIGIT; i++)
+    {
+        if (nArg == cwDigit2WordSimp[0][i] || nArg == cwDigit2WordSimp[1][i] ||
+            nArg == cwDigit2WordTrad[0][i] || nArg == cwDigit2WordTrad[1][i])
+        {
+            break;
         }
-      }
-      lpBoard += sprintf(lpBoard, "\r\n");
-    } else {
-      lpBoard += sprintf(lpBoard, "%s\r\n", lpcszBoardStr[i]);
     }
-  }
+    return i;
 }
 
-// ¶ÔFEN´®×÷¾µÏñ(Ö»ÒªÊ¶±ğĞĞ·Ö¸ô·û"/"£¬ĞĞÄÚ×Ö·û´®Ë³Ğòµßµ¹¼´¿É)
-void FenMirror(char *szFenDst, const char *szFenSrc) {
-  int i, j;
-  const char *lpSrc;
-  char *lpDst, *lpDstLimit;
-  char szTempStr[128];
-
-  lpSrc = szFenSrc;
-  lpDst = szFenDst;
-  lpDstLimit = lpDst + 127;
-  if (*lpSrc == '\0') {
-    *lpDst = '\0';
-    return;
-  }
-  while (*lpSrc == ' ') {
-    lpSrc ++;
-    if (*lpSrc == '\0') {
-      *lpDst = '\0';
-      return;
+static int Word2Piece(int nArg)
+{
+    int i;
+    if (false)
+    {
     }
-  }
-  i = 0;
-  while(lpDst < lpDstLimit && i < 127) {
-    if (*lpSrc == '/' || *lpSrc == ' ' || *lpSrc == '\0') {
-      for (j = 0; j < i; j ++) {
-        *lpDst = szTempStr[i - j - 1];
-        lpDst ++;
-        if (lpDst == lpDstLimit) {
-          break;
+    else if (nArg == 0x9b8e /*å¸¥*/ || nArg == 0xa28c /*å°‡*/)
+    {
+        return 0;
+    }
+    else if (nArg == 0x52f1 /*é¦¬*/ || nArg == 0xd882 /*å‚Œ*/ || nArg == 0x58d8 /*è±–[å‚Œ]*/)
+    {
+        return 3;
+    }
+    else if (nArg == 0x87dc /*è»Š*/ || nArg == 0x8cb3 /*ç¡¨*/ || nArg == 0xcfda /*è°™[ç¡¨]*/ || nArg == 0x6582 /*ä¿¥*/)
+    {
+        return 4;
+    }
+    else if (nArg == 0xfcb0 /*åŒ…*/ || nArg == 0x5da5 /*ï¿½][åŒ…]*/ || nArg == 0x68b3 /*ç ²*/ || nArg == 0xa5af /*ï¿½ï¿½[ç ²]*/)
+    {
+        return 5;
+    }
+    else
+    {
+        for (i = 0; i < MAX_PIECE; i++)
+        {
+            if (nArg == cwPiece2WordSimp[0][i] || nArg == cwPiece2WordSimp[1][i] ||
+                nArg == cwPiece2WordTrad[0][i] || nArg == cwPiece2WordTrad[1][i])
+            {
+                break;
+            }
         }
-      }
-      i = 0;
-      if (*lpSrc == '/') {
-        *lpDst = '/';
-        lpDst ++;
-      } else {
-        break;
-      }
-    } else {
-      szTempStr[i] = *lpSrc;
-      i ++;
+        return i;
     }
-    lpSrc ++;
-  };
-  while(lpSrc != '\0' && lpDst < lpDstLimit) {
-    *lpDst = *lpSrc;
-    lpSrc ++;
-    lpDst ++;
-  }
-  *lpDst = '\0';
-  return;
 }
 
-union C4dwStruct {
-  char c[4];
-  uint32_t dw;
+static int Word2Direct(int nArg)
+{
+    int i;
+    if (nArg == 0x4ddf /*é€²*/)
+    {
+        return 0;
+    }
+    else
+    {
+        for (i = 0; i < MAX_DIRECT; i++)
+        {
+            if (nArg == cwDirect2WordSimp[i] || nArg == cwDirect2WordTrad[i])
+            {
+                break;
+            }
+        }
+        return i;
+    }
+}
+
+static int Word2Pos(int nArg)
+{
+    int i;
+    if (nArg == 0xe1e1 /*å¾Œ*/ || nArg == 0x5aa6 /*ï¿½Z[å]*/)
+    {
+        return 2 + DIRECT_TO_POS;
+    }
+    else
+    {
+        for (i = 0; i < MAX_POS; i++)
+        {
+            if (nArg == cwPos2WordSimp[i] || nArg == cwPos2WordTrad[i])
+            {
+                break;
+            }
+        }
+        return i;
+    }
+}
+
+// ç¡®å®šä½¿ç”¨ç®€ä½“æ±‰å­—å’Œç¹ä½“æ±‰å­—
+void ChineseInit(bool bTraditional)
+{
+    if (bTraditional)
+    {
+        lpcwDigit2Word = cwDigit2WordTrad;
+        lpcwPiece2Word = cwPiece2WordTrad;
+        lpcwDirect2Word = cwDirect2WordTrad;
+        lpcwPos2Word = cwPos2WordTrad;
+        lpcszBoardStr = cszBoardStrTrad;
+        wPromote = 0xdcc5 /*è·‘*/;
+    }
+    else
+    {
+        lpcwDigit2Word = cwDigit2WordSimp;
+        lpcwPiece2Word = cwPiece2WordSimp;
+        lpcwDirect2Word = cwDirect2WordSimp;
+        lpcwPos2Word = cwPos2WordSimp;
+        lpcszBoardStr = cszBoardStrSimp;
+        wPromote = 0xe4b1 /*å˜*/;
+    }
+}
+
+// å°è¯•æŸä¸ªç€æ³•ï¼Œå¹¶è¿”å›ç€æ³•çŠ¶æ€ï¼Œå‚é˜…"cchess.h"
+bool TryMove(PositionStruct &pos, int &nStatus, int mv)
+{
+    if (!pos.LegalMove(mv))
+    {
+        nStatus = MOVE_ILLEGAL;
+        return false;
+    }
+    if (!pos.MakeMove(mv))
+    {
+        nStatus = MOVE_INCHECK;
+        return false;
+    }
+    nStatus = 0;
+    nStatus += (pos.LastMove().CptDrw > 0 ? MOVE_CAPTURE : 0);
+    nStatus += (pos.LastMove().ChkChs > 0 ? MOVE_CHECK : 0);
+    nStatus += (pos.IsMate() ? MOVE_MATE : 0);
+    nStatus += pos.RepStatus(3) * MOVE_PERPETUAL; // æç¤ºï¼šå‚é˜…"position.cpp"ä¸­çš„"IsRep()"å‡½æ•°
+    nStatus += (pos.IsDraw() ? MOVE_DRAW : 0);
+    return true;
+}
+
+// å±€é¢é•œåƒ
+
+// çº¢é»‘äº’æ¢
+void ExchangeSide(PositionStruct &pos)
+{
+    int i, sq;
+    uint8_t ucsqList[32];
+    for (i = 16; i < 48; i++)
+    {
+        sq = pos.ucsqPieces[i];
+        ucsqList[i - 16] = sq;
+        if (sq != 0)
+        {
+            pos.AddPiece(sq, i, DEL_PIECE);
+        }
+    }
+    for (i = 16; i < 48; i++)
+    {
+        sq = ucsqList[i < 32 ? i : i - 32]; // è¿™è¡Œä¸åŒäºFlipBoard
+        if (sq != 0)
+        {
+            pos.AddPiece(SQUARE_FLIP(sq), i);
+        }
+    }
+    pos.ChangeSide(); // è¿™è¡Œä¸åŒäºFlipBoard
+}
+
+// ç¿»è½¬æ£‹ç›˜
+void FlipBoard(PositionStruct &pos)
+{
+    int i, sq;
+    uint8_t ucsqList[32];
+    for (i = 16; i < 48; i++)
+    {
+        sq = pos.ucsqPieces[i];
+        ucsqList[i - 16] = sq;
+        if (sq != 0)
+        {
+            pos.AddPiece(sq, i, DEL_PIECE);
+        }
+    }
+    for (i = 16; i < 48; i++)
+    {
+        sq = ucsqList[i - 16]; // è¿™è¡Œä¸åŒäºExchangeSide
+        if (sq != 0)
+        {
+            pos.AddPiece(SQUARE_FLIP(sq), i);
+        }
+    }
+}
+
+// ç”Ÿæˆæ–‡æœ¬æ£‹ç›˜(çº¢å­ç”¨()è¡¨ç¤ºï¼Œé»‘å­ç”¨[]è¡¨ç¤º)
+void BoardText(char *szBoard, const PositionStruct &pos, bool bAnsi)
+{
+    char *lpBoard;
+    int i, j, pc;
+
+    lpBoard = szBoard;
+    if (bAnsi)
+    {
+        lpBoard += sprintf(lpBoard, "\33[0m");
+    }
+    for (i = 0; i < 19; i++)
+    {
+        if (i % 2 == 0)
+        {
+            for (j = FILE_LEFT; j <= FILE_RIGHT; j++)
+            {
+                pc = pos.ucpcSquares[COORD_XY(j, i / 2 + RANK_TOP)];
+                if ((pc & SIDE_TAG(0)) != 0)
+                {
+                    lpBoard += sprintf(lpBoard, bAnsi ? "(\33[1;31m%.2s\33[0m)" : "(%.2s)", (const char *)&lpcwPiece2Word[0][PIECE_TYPE(pc)]);
+                }
+                else if ((pc & SIDE_TAG(1)) != 0)
+                {
+                    lpBoard += sprintf(lpBoard, bAnsi ? "[\33[1;32m%.2s\33[0m]" : "[%.2s]", (const char *)&lpcwPiece2Word[1][PIECE_TYPE(pc)]);
+                }
+                else
+                {
+                    lpBoard += sprintf(lpBoard, "%.4s", lpcszBoardStr[i] + (j - FILE_LEFT) * 4);
+                }
+            }
+            lpBoard += sprintf(lpBoard, "\r\n");
+        }
+        else
+        {
+            lpBoard += sprintf(lpBoard, "%s\r\n", lpcszBoardStr[i]);
+        }
+    }
+}
+
+// å¯¹FENä¸²ä½œé•œåƒ(åªè¦è¯†åˆ«è¡Œåˆ†éš”ç¬¦"/"ï¼Œè¡Œå†…å­—ç¬¦ä¸²é¡ºåºé¢ å€’å³å¯)
+void FenMirror(char *szFenDst, const char *szFenSrc)
+{
+    const unsigned char *lpSrc = (const unsigned char *)szFenSrc;
+    unsigned char *lpDst = (unsigned char *)szFenDst;
+    const unsigned char *lpDstLimit = lpDst + 127;
+
+    // æ‹’ç»ç©ºè¾“å…¥
+    if (!lpSrc || !lpDst || *lpSrc == '\0')
+    {
+        *lpDst = '\0';
+        return;
+    }
+
+    // è·³è¿‡å‰å¯¼ç©ºæ ¼ï¼ˆåªè®¤åŠè§’ï¼‰
+    while (*lpSrc == ' ')
+    {
+        lpSrc++;
+    }
+
+    int i = 0;
+    unsigned char szTempStr[128];
+
+    while (*lpSrc && lpDst < lpDstLimit)
+    {
+        unsigned char c = *lpSrc;
+
+        // ===== å¼ºçº¦æŸï¼šåªå…è®¸åŠè§’ ASCII =====
+        // ç©ºæ ¼(0x20) ~ æ³¢æµªå·(0x7E)ï¼ŒåŠ ä¸Šæ¢è¡Œ/å›è½¦
+        if (!(c == ' ' || c == '\t' ||
+              (c >= 0x21 && c <= 0x7E) ||
+              c == '\r' || c == '\n'))
+        {
+            // å‘ç°éåŠè§’ ASCIIï¼Œæ•´å±€ä½œåºŸ
+            *szFenDst = '\0';
+            return;
+        }
+
+        if (c == '/' || c == ' ')
+        {
+            // é•œåƒè¾“å‡ºå½“å‰æ®µ
+            for (int j = 0; j < i; j++)
+            {
+                if (lpDst >= lpDstLimit)
+                {
+                    break;
+                }
+                *lpDst++ = szTempStr[i - j - 1];
+            }
+            i = 0;
+
+            if (c == '/')
+            {
+                if (lpDst >= lpDstLimit)
+                {
+                    break;
+                }
+                *lpDst++ = '/';
+            }
+            else
+            {
+                // ç©ºæ ¼ç»“æŸ
+                break;
+            }
+        }
+        else
+        {
+            if (i < 127)
+            {
+                szTempStr[i++] = c;
+            }
+        }
+
+        lpSrc++;
+    }
+
+    // å‰©ä½™æœªå¤„ç†å®Œçš„è¡Œ
+    while (*lpSrc && lpDst < lpDstLimit)
+    {
+        *lpDst++ = *lpSrc++;
+    }
+
+    // ç¡®ä¿ç»“å°¾
+    if (lpDst < lpDstLimit)
+    {
+        *lpDst = '\0';
+    }
+    else
+    {
+        szFenDst[127] = '\0';
+    }
+}
+
+union C4dwStruct
+{
+    char c[4];
+    uint32_t dw;
 };
 
-/* º¯Êı"FileMirror()"¶Ô×Å·¨µÄ×İÏß±íÊ¾×÷¾µÏñ¡£
+/* å‡½æ•°"FileMirror()"å¯¹ç€æ³•çš„çºµçº¿è¡¨ç¤ºä½œé•œåƒã€‚
  *
- * ×İÏßµÄ·ûºÅ±íÊ¾»ù±¾ÀàËÆÓÚºº×Ö±íÊ¾£¬µ«µ±³öÏÖÀàËÆ¡°Ç°ÅÚÍË¶ş¡±ÕâÑùµÄ±íÊ¾Ê±£¬·ûºÅ±íÊ¾¾Í»áÓĞ²»Í¬µÄÇé¿ö¡£
- * °´ÕÕ¡¶¹æ·¶¡·µÄ½¨Òé£¬±íÊ¾³É"C+-2"×îÈİÒ×±»Ê¶±ğ£¬µ«ÊÇÒ²ÓĞ±íÊ¾³É"+C-2"µÄ£¬¼´·ûºÅºÍºº×ÖÍêÈ«¶ÔÓ¦£¬Òò´Ë±¾º¯ÊıÒ²»á¿¼ÂÇÕâÖÖĞÎÊ½¡£
- * ¶ÔÒ»°ã×Å·¨¶øÑÔ£¬×İÏß±íÊ¾µÄ¾µÏñÊÇÎ¨Ò»µÄ£¬µ«ÊÇ¶ÔÓÚ¡°Á½ÌõµÄ×İÏßÉÏÓĞ¶à¸ö±ø(×ä)¡±µÄº±¼ûÇé¿ö£¬
- * ±¾º¯ÊıÖ»ÄÜ¿¼ÂÇ×î²»º±¼ûµÄÒ»ÖÖÌØÀı£¬¼´Á½Ìõ×İÏßÉÏ¸÷ÓĞÁ½¸ö±ø(×ä)£¬ÕâÑù£¬"Paxx"ºÍ"Pbxx"·Ö±ğ¸ú"Pcxx"ºÍ"Pdxx"¾µÏñ£¬
- * ¶ø¶ÔÓÚÆäËûÇé¿öÔòÎŞ·¨×÷³öÕıÈ·×ª»»¡£
- * ×¢Òâ£º·ûºÅ±íÊ¾ÓÉ4¸ö×Ö½Ú¹¹³É£¬ËùÒÔ¿ÉÒÔÓÃÒ»¸ö"uint32_t"ÀàĞÍ×÷¿ìËÙ´«Êä(Í¬Àí£¬ºº×Ö±íÊ¾ÓÃ"uint64_t")¡£
+ * çºµçº¿çš„ç¬¦å·è¡¨ç¤ºåŸºæœ¬ç±»ä¼¼äºæ±‰å­—è¡¨ç¤ºï¼Œä½†å½“å‡ºç°ç±»ä¼¼â€œå‰ç‚®é€€äºŒâ€è¿™æ ·çš„è¡¨ç¤ºæ—¶ï¼Œç¬¦å·è¡¨ç¤ºå°±ä¼šæœ‰ä¸åŒçš„æƒ…å†µã€‚
+ * æŒ‰ç…§ã€Šè§„èŒƒã€‹çš„å»ºè®®ï¼Œè¡¨ç¤ºæˆ"C+-2"æœ€å®¹æ˜“è¢«è¯†åˆ«ï¼Œä½†æ˜¯ä¹Ÿæœ‰è¡¨ç¤ºæˆ"+C-2"çš„ï¼Œå³ç¬¦å·å’Œæ±‰å­—å®Œå…¨å¯¹åº”ï¼Œå› æ­¤æœ¬å‡½æ•°ä¹Ÿä¼šè€ƒè™‘è¿™ç§å½¢å¼ã€‚
+ * å¯¹ä¸€èˆ¬ç€æ³•è€Œè¨€ï¼Œçºµçº¿è¡¨ç¤ºçš„é•œåƒæ˜¯å”¯ä¸€çš„ï¼Œä½†æ˜¯å¯¹äºâ€œä¸¤æ¡çš„çºµçº¿ä¸Šæœ‰å¤šä¸ªå…µ(å’)â€çš„ç½•è§æƒ…å†µï¼Œ
+ * æœ¬å‡½æ•°åªèƒ½è€ƒè™‘æœ€ä¸ç½•è§çš„ä¸€ç§ç‰¹ä¾‹ï¼Œå³ä¸¤æ¡çºµçº¿ä¸Šå„æœ‰ä¸¤ä¸ªå…µ(å’)ï¼Œè¿™æ ·ï¼Œ"Paxx"å’Œ"Pbxx"åˆ†åˆ«è·Ÿ"Pcxx"å’Œ"Pdxx"é•œåƒï¼Œ
+ * è€Œå¯¹äºå…¶ä»–æƒ…å†µåˆ™æ— æ³•ä½œå‡ºæ­£ç¡®è½¬æ¢ã€‚
+ * æ³¨æ„ï¼šç¬¦å·è¡¨ç¤ºç”±4ä¸ªå­—èŠ‚æ„æˆï¼Œæ‰€ä»¥å¯ä»¥ç”¨ä¸€ä¸ª"uint32_t"ç±»å‹ä½œå¿«é€Ÿä¼ è¾“(åŒç†ï¼Œæ±‰å­—è¡¨ç¤ºç”¨"uint64_t")ã€‚
  */
-uint32_t FileMirror(uint32_t dwFileStr) {
-  int nPos, nFile, pt;
-  C4dwStruct Ret;
-  Ret.dw = dwFileStr;
+uint32_t FileMirror(uint32_t dwFileStr)
+{
+    int nPos, nFile, pt;
+    C4dwStruct Ret;
+    Ret.dw = dwFileStr;
 
-  nPos = Byte2Direct(Ret.c[0]);
-  if (nPos == MAX_DIRECT) {
-    pt = Byte2Piece(Ret.c[0]);
-    nFile = Byte2Digit(Ret.c[1]);
-    if (nFile == MAX_DIGIT) {
-      switch (Ret.c[1]) {
-      case 'a':
-        Ret.c[1] = 'c';
-        break;
-      case 'b':
-        Ret.c[1] = 'd';
-        break;
-      case 'c':
-        Ret.c[1] = 'a';
-        break;
-      case 'd':
-        Ret.c[1] = 'b';
-        break;
-      default:
-        break;
-      }
-    } else {
-      Ret.c[1] = Digit2Byte(8 - nFile);
+    nPos = Byte2Direct(Ret.c[0]);
+    if (nPos == MAX_DIRECT)
+    {
+        pt = Byte2Piece(Ret.c[0]);
+        nFile = Byte2Digit(Ret.c[1]);
+        if (nFile == MAX_DIGIT)
+        {
+            switch (Ret.c[1])
+            {
+            case 'a':
+                Ret.c[1] = 'c';
+                break;
+            case 'b':
+                Ret.c[1] = 'd';
+                break;
+            case 'c':
+                Ret.c[1] = 'a';
+                break;
+            case 'd':
+                Ret.c[1] = 'b';
+                break;
+            default:
+                break;
+            }
+        }
+        else
+        {
+            Ret.c[1] = Digit2Byte(8 - nFile);
+        }
     }
-  } else {
-    pt = Byte2Piece(Ret.c[1]);
-  }
-  if ((pt >= ADVISOR_TYPE && pt <= KNIGHT_TYPE) || Byte2Direct(Ret.c[2]) == 1) {
-    Ret.c[3] = Digit2Byte(8 - Byte2Digit(Ret.c[3]));
-  }
-  return Ret.dw;
+    else
+    {
+        pt = Byte2Piece(Ret.c[1]);
+    }
+    if ((pt >= ADVISOR_TYPE && pt <= KNIGHT_TYPE) || Byte2Direct(Ret.c[2]) == 1)
+    {
+        Ret.c[3] = Digit2Byte(8 - Byte2Digit(Ret.c[3]));
+    }
+    return Ret.dw;
 }
 
-// ½«ºº×Ö±íÊ¾×ª»»Îª·ûºÅ±íÊ¾
-uint32_t Chin2File(uint64_t qwChinStr) {
-  int nPos;
-  uint16_t *lpwArg;
-  C4dwStruct Ret;
+// å°†æ±‰å­—è¡¨ç¤ºè½¬æ¢ä¸ºç¬¦å·è¡¨ç¤º
+uint32_t Chin2File(uint64_t qwChinStr)
+{
+    int nPos;
+    uint16_t *lpwArg;
+    C4dwStruct Ret;
 
-  lpwArg = (uint16_t *) (void *) &qwChinStr;
-  nPos = Word2Pos(lpwArg[0]);
-  Ret.c[0] = PIECE_BYTE(Word2Piece(nPos == MAX_POS ? lpwArg[0] : lpwArg[1]));
-  Ret.c[1] = (nPos == MAX_POS ? Digit2Byte(Word2Digit(lpwArg[1])) : ccPos2Byte[nPos]);
-  if ((lpwArg[2] == 0xe4b1/*±ä*/ || lpwArg[2] == 0xdcc5/*ÅÜ*/ || lpwArg[2] == 0x83d7/*×ƒ*/) &&
-      Word2Piece(lpwArg[3]) == 6) {
-    Ret.c[2] = '=';
-    Ret.c[3] = 'P';
-  } else {
-    Ret.c[2] = ccDirect2Byte[Word2Direct(lpwArg[2])];
-    Ret.c[3] = Digit2Byte(Word2Digit(lpwArg[3]));
-  }
-  return Ret.dw;
+    lpwArg = (uint16_t *)(void *)&qwChinStr;
+    nPos = Word2Pos(lpwArg[0]);
+    Ret.c[0] = PIECE_BYTE(Word2Piece(nPos == MAX_POS ? lpwArg[0] : lpwArg[1]));
+    Ret.c[1] = (nPos == MAX_POS ? Digit2Byte(Word2Digit(lpwArg[1])) : ccPos2Byte[nPos]);
+    if ((lpwArg[2] == 0xe4b1 /*å˜*/ || lpwArg[2] == 0xdcc5 /*è·‘*/ || lpwArg[2] == 0x83d7 /*è®Š*/) &&
+        Word2Piece(lpwArg[3]) == 6)
+    {
+        Ret.c[2] = '=';
+        Ret.c[3] = 'P';
+    }
+    else
+    {
+        Ret.c[2] = ccDirect2Byte[Word2Direct(lpwArg[2])];
+        Ret.c[3] = Digit2Byte(Word2Digit(lpwArg[3]));
+    }
+    return Ret.dw;
 }
 
-// ½«·ûºÅ±íÊ¾×ª»»Îªºº×Ö±íÊ¾
-uint64_t File2Chin(uint32_t dwFileStr, int sdPlayer) {
-  int nPos;
-  char *lpArg;
-  union {
-    uint16_t w[4];
-    uint64_t qw;
-  } Ret;
+// å°†ç¬¦å·è¡¨ç¤ºè½¬æ¢ä¸ºæ±‰å­—è¡¨ç¤º
+uint64_t File2Chin(uint32_t dwFileStr, int sdPlayer)
+{
+    int nPos;
+    char *lpArg;
+    union
+    {
+        uint16_t w[4];
+        uint64_t qw;
+    } Ret;
 
-  lpArg = (char *) &dwFileStr;
-  nPos = Byte2Direct(lpArg[0]);
-  if (nPos == MAX_DIRECT) {
-    nPos = Byte2Pos(lpArg[1]);
-    Ret.w[0] = (nPos == MAX_POS ? lpcwPiece2Word[sdPlayer][Byte2Piece(lpArg[0])] : lpcwPos2Word[nPos]);
-    Ret.w[1] = (nPos == MAX_POS ? lpcwDigit2Word[sdPlayer][Byte2Digit(lpArg[1])] :
-        lpcwPiece2Word[sdPlayer][Byte2Piece(lpArg[0])]);
-  } else {
-    Ret.w[0] = lpcwPos2Word[nPos + DIRECT_TO_POS];
-    Ret.w[1] = lpcwPiece2Word[sdPlayer][Byte2Piece(lpArg[1])];
-  }
-  if (lpArg[2] == '=' && Byte2Piece(lpArg[3]) == 6) {
-    Ret.w[2] = wPromote;
-    Ret.w[3] = lpcwPiece2Word[sdPlayer][6];
-  } else {
-    Ret.w[2] = lpcwDirect2Word[Byte2Direct(lpArg[2])];
-    Ret.w[3] = lpcwDigit2Word[sdPlayer][Byte2Digit(lpArg[3])];
-  }
-  return Ret.qw;
+    lpArg = (char *)&dwFileStr;
+    nPos = Byte2Direct(lpArg[0]);
+    if (nPos == MAX_DIRECT)
+    {
+        nPos = Byte2Pos(lpArg[1]);
+        Ret.w[0] = (nPos == MAX_POS ? lpcwPiece2Word[sdPlayer][Byte2Piece(lpArg[0])] : lpcwPos2Word[nPos]);
+        Ret.w[1] = (nPos == MAX_POS ? lpcwDigit2Word[sdPlayer][Byte2Digit(lpArg[1])] : lpcwPiece2Word[sdPlayer][Byte2Piece(lpArg[0])]);
+    }
+    else
+    {
+        Ret.w[0] = lpcwPos2Word[nPos + DIRECT_TO_POS];
+        Ret.w[1] = lpcwPiece2Word[sdPlayer][Byte2Piece(lpArg[1])];
+    }
+    if (lpArg[2] == '=' && Byte2Piece(lpArg[3]) == 6)
+    {
+        Ret.w[2] = wPromote;
+        Ret.w[3] = lpcwPiece2Word[sdPlayer][6];
+    }
+    else
+    {
+        Ret.w[2] = lpcwDirect2Word[Byte2Direct(lpArg[2])];
+        Ret.w[3] = lpcwDigit2Word[sdPlayer][Byte2Digit(lpArg[3])];
+    }
+    return Ret.qw;
 }
 
-/* "File2Move()"º¯Êı½«×İÏß·ûºÅ±íÊ¾×ª»»ÎªÄÚ²¿×Å·¨±íÊ¾¡£
+/* "File2Move()"å‡½æ•°å°†çºµçº¿ç¬¦å·è¡¨ç¤ºè½¬æ¢ä¸ºå†…éƒ¨ç€æ³•è¡¨ç¤ºã€‚
  *
- * Õâ¸öº¯ÊıÒÔ¼°ºóÃæµÄ"Move2File()"º¯ÊıÊÇ±¾Ä£¿é×îÄÑ´¦ÀíµÄÁ½¸öº¯Êı£¬ÌØ±ğÊÇÔÚ´¦Àí¡°Á½ÌõµÄ×İÏßÉÏÓĞ¶à¸ö±ø(×ä)¡±µÄÎÊÌâÉÏ¡£
- * ÔÚÆåÆ×µÄ¿ìËÙÊ±£¬ÔÊĞíÖ»Ê¹ÓÃÊı×Ö¼üÅÌ£¬Òò´Ë1µ½7ÒÀ´Î´ú±íË§(½«)µ½±ø(×ä)ÕâÆßÖÖÆå×Ó£¬"File2Move()"º¯ÊıÒ²¿¼ÂÇµ½ÁËÕâ¸öÎÊÌâ¡£
+ * è¿™ä¸ªå‡½æ•°ä»¥åŠåé¢çš„"Move2File()"å‡½æ•°æ˜¯æœ¬æ¨¡å—æœ€éš¾å¤„ç†çš„ä¸¤ä¸ªå‡½æ•°ï¼Œç‰¹åˆ«æ˜¯åœ¨å¤„ç†â€œä¸¤æ¡çš„çºµçº¿ä¸Šæœ‰å¤šä¸ªå…µ(å’)â€çš„é—®é¢˜ä¸Šã€‚
+ * åœ¨æ£‹è°±çš„å¿«é€Ÿæ—¶ï¼Œå…è®¸åªä½¿ç”¨æ•°å­—é”®ç›˜ï¼Œå› æ­¤1åˆ°7ä¾æ¬¡ä»£è¡¨å¸…(å°†)åˆ°å…µ(å’)è¿™ä¸ƒç§æ£‹å­ï¼Œ"File2Move()"å‡½æ•°ä¹Ÿè€ƒè™‘åˆ°äº†è¿™ä¸ªé—®é¢˜ã€‚
  */
-int File2Move(uint32_t dwFileStr, const PositionStruct &pos) {
-  int i, j, nPos, pt, sq, nPieceNum;
-  int xSrc, ySrc, xDst, yDst;
-  C4dwStruct FileStr;
-  int nFileList[9], nPieceList[5];
-  // ×İÏß·ûºÅ±íÊ¾×ª»»ÎªÄÚ²¿×Å·¨±íÊ¾£¬Í¨³£·ÖÎªÒÔÏÂ¼¸¸ö²½Öè£º
+int File2Move(uint32_t dwFileStr, const PositionStruct &pos)
+{
+    int i, j, nPos, pt, sq, nPieceNum;
+    int xSrc, ySrc, xDst, yDst;
+    C4dwStruct FileStr;
+    int nFileList[9], nPieceList[5];
+    // çºµçº¿ç¬¦å·è¡¨ç¤ºè½¬æ¢ä¸ºå†…éƒ¨ç€æ³•è¡¨ç¤ºï¼Œé€šå¸¸åˆ†ä¸ºä»¥ä¸‹å‡ ä¸ªæ­¥éª¤ï¼š
 
-  // 1. ¼ì²é×İÏß·ûºÅÊÇ·ñÊÇÊË(Ê¿)Ïà(Ïó)µÄ28ÖÖ¹Ì¶¨×İÏß±íÊ¾£¬ÔÚÕâÖ®Ç°Ê×ÏÈ±ØĞë°ÑÊı×Ö¡¢Ğ¡Ğ´µÈ²»Í³Ò»µÄ¸ñÊ½×ª»»ÎªÍ³Ò»¸ñÊ½£»
-  FileStr.dw = dwFileStr;
-  switch (FileStr.c[0]) {
-  case '2':
-  case 'a':
-    FileStr.c[0] = 'A';
-    break;
-  case '3':
-  case 'b':
-  case 'E':
-  case 'e':
-    FileStr.c[0] = 'B';
-    break;
-  default:
-    break;
-  }
-  if (FileStr.c[3] == 'p') {
-    FileStr.c[3] = 'P';
-  }
-  for (i = 0; i < MAX_FIX_FILE; i ++) {
-    if (FileStr.dw == cdwFixFile[i]) {
-      if (pos.sdPlayer == 0) {
-        return MOVE(cucFixMove[i][0], cucFixMove[i][1]);
-      } else {
-        return MOVE(SQUARE_FLIP(cucFixMove[i][0]), SQUARE_FLIP(cucFixMove[i][1]));
-      }
+    // 1. æ£€æŸ¥çºµçº¿ç¬¦å·æ˜¯å¦æ˜¯ä»•(å£«)ç›¸(è±¡)çš„28ç§å›ºå®šçºµçº¿è¡¨ç¤ºï¼Œåœ¨è¿™ä¹‹å‰é¦–å…ˆå¿…é¡»æŠŠæ•°å­—ã€å°å†™ç­‰ä¸ç»Ÿä¸€çš„æ ¼å¼è½¬æ¢ä¸ºç»Ÿä¸€æ ¼å¼ï¼›
+    FileStr.dw = dwFileStr;
+    switch (FileStr.c[0])
+    {
+    case '2':
+    case 'a':
+        FileStr.c[0] = 'A';
+        break;
+    case '3':
+    case 'b':
+    case 'E':
+    case 'e':
+        FileStr.c[0] = 'B';
+        break;
+    default:
+        break;
     }
-  }
-
-  // 2. Èç¹û²»ÊÇÕâ28ÖÖ¹Ì¶¨×İÏß±íÊ¾£¬ÄÇÃ´°ÑÆå×Ó¡¢Î»ÖÃºÍ×İÏßĞòºÅ(ÁĞºÅ)½âÎö³öÀ´
-  nPos = Byte2Direct(FileStr.c[0]);
-  if (nPos == MAX_DIRECT) {
-    pt = Byte2Piece(FileStr.c[0]);
-    nPos = Byte2Pos(FileStr.c[1]);
-  } else {
-    pt = Byte2Piece(FileStr.c[1]);
-    nPos += DIRECT_TO_POS;
-  }
-  if (nPos == MAX_POS) {
-
-    // 3. Èç¹ûÆå×ÓÊÇÓÃÁĞºÅ±íÊ¾µÄ£¬ÄÇÃ´¿ÉÒÔÖ±½Ó¸ù¾İ×İÏßÀ´ÕÒµ½Æå×ÓĞòºÅ£»
-    xSrc = Byte2Digit(FileStr.c[1]);
-    if (pt == KING_TYPE) {
-      sq = FILESQ_SIDE_PIECE(pos, 0);
-    } else if (pt >= KNIGHT_TYPE && pt <= PAWN_TYPE) {
-      j = (pt == PAWN_TYPE ? 5 : 2);
-      for (i = 0; i < j; i ++) {
-        sq = FILESQ_SIDE_PIECE(pos, FIRST_PIECE(pt, i));
-        if (sq != -1) {
-          if (FILESQ_FILE_X(sq) == xSrc) {
-            break;
-          }
+    if (FileStr.c[3] == 'p')
+    {
+        FileStr.c[3] = 'P';
+    }
+    for (i = 0; i < MAX_FIX_FILE; i++)
+    {
+        if (FileStr.dw == cdwFixFile[i])
+        {
+            if (pos.sdPlayer == 0)
+            {
+                return MOVE(cucFixMove[i][0], cucFixMove[i][1]);
+            }
+            else
+            {
+                return MOVE(SQUARE_FLIP(cucFixMove[i][0]), SQUARE_FLIP(cucFixMove[i][1]));
+            }
         }
-      }
-      sq = (i == j ? -1 : sq);
-    } else {
-      sq = -1;
     }
-  } else {
 
-    // 4. Èç¹ûÆå×ÓÊÇÓÃÎ»ÖÃ±íÊ¾µÄ£¬ÄÇÃ´±ØĞëÌôÑ¡³öº¬ÓĞ¶à¸ö¸ÃÖÖÆå×ÓµÄËùÓĞ×İÏß£¬ÕâÊÇ±¾º¯Êı×îÄÑ´¦ÀíµÄµØ·½£»
-    if (pt >= KNIGHT_TYPE && pt <= PAWN_TYPE) {
-      for (i = 0; i < 9; i ++) {
-        nFileList[i] = 0;
-      }
-      j = (pt == PAWN_TYPE ? 5 : 2);
-      for (i = 0; i < j; i ++) {
-        sq = FILESQ_SIDE_PIECE(pos, FIRST_PIECE(pt, i));
-        if (sq != -1) {
-          nFileList[FILESQ_FILE_X(sq)] ++;
+    // 2. å¦‚æœä¸æ˜¯è¿™28ç§å›ºå®šçºµçº¿è¡¨ç¤ºï¼Œé‚£ä¹ˆæŠŠæ£‹å­ã€ä½ç½®å’Œçºµçº¿åºå·(åˆ—å·)è§£æå‡ºæ¥
+    nPos = Byte2Direct(FileStr.c[0]);
+    if (nPos == MAX_DIRECT)
+    {
+        pt = Byte2Piece(FileStr.c[0]);
+        nPos = Byte2Pos(FileStr.c[1]);
+    }
+    else
+    {
+        pt = Byte2Piece(FileStr.c[1]);
+        nPos += DIRECT_TO_POS;
+    }
+    if (nPos == MAX_POS)
+    {
+
+        // 3. å¦‚æœæ£‹å­æ˜¯ç”¨åˆ—å·è¡¨ç¤ºçš„ï¼Œé‚£ä¹ˆå¯ä»¥ç›´æ¥æ ¹æ®çºµçº¿æ¥æ‰¾åˆ°æ£‹å­åºå·ï¼›
+        xSrc = Byte2Digit(FileStr.c[1]);
+        if (pt == KING_TYPE)
+        {
+            sq = FILESQ_SIDE_PIECE(pos, 0);
         }
-      }
-      nPieceNum = 0;
-      for (i = 0; i < j; i ++) {
-        sq = FILESQ_SIDE_PIECE(pos, FIRST_PIECE(pt, i));
-        if (sq != -1) {
-          if (nFileList[FILESQ_FILE_X(sq)] > 1) {
-            nPieceList[nPieceNum] = FIRST_PIECE(pt, i);
-            nPieceNum ++;
-          }
+        else if (pt >= KNIGHT_TYPE && pt <= PAWN_TYPE)
+        {
+            j = (pt == PAWN_TYPE ? 5 : 2);
+            for (i = 0; i < j; i++)
+            {
+                sq = FILESQ_SIDE_PIECE(pos, FIRST_PIECE(pt, i));
+                if (sq != -1)
+                {
+                    if (FILESQ_FILE_X(sq) == xSrc)
+                    {
+                        break;
+                    }
+                }
+            }
+            sq = (i == j ? -1 : sq);
         }
-      }
-
-      // 5. ÕÒµ½ÕâĞ©×İÏßÒÔºó£¬¶ÔÕâĞ©×İÏßÉÏµÄÆå×Ó½øĞĞÅÅĞò£¬È»ºó¸ù¾İÎ»ÖÃÀ´È·¶¨Æå×ÓĞòºÅ£»
-      for (i = 0; i < nPieceNum - 1; i ++) {
-        for (j = nPieceNum - 1; j > i; j --) {
-          if (FILESQ_SIDE_PIECE(pos, nPieceList[j - 1]) > FILESQ_SIDE_PIECE(pos, nPieceList[j])) {
-            SWAP(nPieceList[j - 1], nPieceList[j]);
-          }
+        else
+        {
+            sq = -1;
         }
-      }
-      // ÌáÊ¾£ºÈç¹ûÖ»ÓĞÁ½¸öÆå×Ó£¬ÄÇÃ´¡°ºó¡±±íÊ¾µÚ¶ş¸öÆå×Ó£¬Èç¹ûÓĞ¶à¸öÆå×Ó£¬
-      // ÄÇÃ´¡°Ò»¶şÈıËÄÎå¡±ÒÀ´Î´ú±íµÚÒ»¸öµ½µÚÎå¸öÆå×Ó£¬¡°Ç°ÖĞºó¡±ÒÀ´Î´ú±íµÚÒ»¸öµ½µÚÈı¸öÆå×Ó¡£
-      if (nPieceNum == 2 && nPos == 2 + DIRECT_TO_POS) {
-        sq = FILESQ_SIDE_PIECE(pos, nPieceList[1]);
-      } else {
-        nPos -= (nPos >= DIRECT_TO_POS ? DIRECT_TO_POS : 0);
-        sq = (nPos >= nPieceNum ? -1 : FILESQ_SIDE_PIECE(pos, nPieceList[nPos]));
-      }
-    } else {
-      sq = -1;
     }
-  }
-  if (sq == -1) {
-    return 0;
-  }
+    else
+    {
 
-  // 6. ÏÖÔÚÒÑÖªÁË×Å·¨µÄÆğµã£¬¾Í¿ÉÒÔ¸ù¾İ×İÏß±íÊ¾µÄºóÁ½¸ö·ûºÅÀ´È·¶¨×Å·¨µÄÖÕµã£»
-  xSrc = FILESQ_FILE_X(sq);
-  ySrc = FILESQ_RANK_Y(sq);
-  if (pt == KNIGHT_TYPE) {
-    // ÌáÊ¾£ºÂíµÄ½øÍË´¦Àí±È½ÏÌØÊâ¡£
-    xDst = Byte2Digit(FileStr.c[3]);
-    if (FileStr.c[2] == '+') {
-      yDst = ySrc - 3 + ABS(xDst - xSrc);
-    } else {
-      yDst = ySrc + 3 - ABS(xDst - xSrc);
-    }
-  } else {
-    if (FileStr.c[2] == '+') {
-      xDst = xSrc;
-      yDst = ySrc - Byte2Digit(FileStr.c[3]) - 1;
-    } else if (FileStr.c[2] == '-') {
-      xDst = xSrc;
-      yDst = ySrc + Byte2Digit(FileStr.c[3]) + 1;
-    } else {
-      xDst = Byte2Digit(FileStr.c[3]);
-      yDst = ySrc;
-    }
-  }
-  // ×¢Òâ£ºyDstÓĞ¿ÉÄÜ³¬¹ı·¶Î§£¡
-  if (yDst < 0 || yDst > 9) {
-    return 0;
-  }
+        // 4. å¦‚æœæ£‹å­æ˜¯ç”¨ä½ç½®è¡¨ç¤ºçš„ï¼Œé‚£ä¹ˆå¿…é¡»æŒ‘é€‰å‡ºå«æœ‰å¤šä¸ªè¯¥ç§æ£‹å­çš„æ‰€æœ‰çºµçº¿ï¼Œè¿™æ˜¯æœ¬å‡½æ•°æœ€éš¾å¤„ç†çš„åœ°æ–¹ï¼›
+        if (pt >= KNIGHT_TYPE && pt <= PAWN_TYPE)
+        {
+            for (i = 0; i < 9; i++)
+            {
+                nFileList[i] = 0;
+            }
+            j = (pt == PAWN_TYPE ? 5 : 2);
+            for (i = 0; i < j; i++)
+            {
+                sq = FILESQ_SIDE_PIECE(pos, FIRST_PIECE(pt, i));
+                if (sq != -1)
+                {
+                    nFileList[FILESQ_FILE_X(sq)]++;
+                }
+            }
+            nPieceNum = 0;
+            for (i = 0; i < j; i++)
+            {
+                sq = FILESQ_SIDE_PIECE(pos, FIRST_PIECE(pt, i));
+                if (sq != -1)
+                {
+                    if (nFileList[FILESQ_FILE_X(sq)] > 1)
+                    {
+                        nPieceList[nPieceNum] = FIRST_PIECE(pt, i);
+                        nPieceNum++;
+                    }
+                }
+            }
 
-  // 7. °ÑÏà¶Ô×ß×Ó·½µÄ×ø±ê×ª»»Îª¹Ì¶¨×ø±ê£¬µÃµ½×Å·¨µÄÆğµãºÍÖÕµã¡£
-  if (pos.sdPlayer == 0) {
-    return MOVE(FILESQ_SQUARE(FILESQ_COORD_XY(xSrc, ySrc)), FILESQ_SQUARE(FILESQ_COORD_XY(xDst, yDst)));
-  } else {
-    return MOVE(SQUARE_FLIP(FILESQ_SQUARE(FILESQ_COORD_XY(xSrc, ySrc))),
-        SQUARE_FLIP(FILESQ_SQUARE(FILESQ_COORD_XY(xDst, yDst))));
-  }
+            // 5. æ‰¾åˆ°è¿™äº›çºµçº¿ä»¥åï¼Œå¯¹è¿™äº›çºµçº¿ä¸Šçš„æ£‹å­è¿›è¡Œæ’åºï¼Œç„¶åæ ¹æ®ä½ç½®æ¥ç¡®å®šæ£‹å­åºå·ï¼›
+            for (i = 0; i < nPieceNum - 1; i++)
+            {
+                for (j = nPieceNum - 1; j > i; j--)
+                {
+                    if (FILESQ_SIDE_PIECE(pos, nPieceList[j - 1]) > FILESQ_SIDE_PIECE(pos, nPieceList[j]))
+                    {
+                        SWAP(nPieceList[j - 1], nPieceList[j]);
+                    }
+                }
+            }
+            // æç¤ºï¼šå¦‚æœåªæœ‰ä¸¤ä¸ªæ£‹å­ï¼Œé‚£ä¹ˆâ€œåâ€è¡¨ç¤ºç¬¬äºŒä¸ªæ£‹å­ï¼Œå¦‚æœæœ‰å¤šä¸ªæ£‹å­ï¼Œ
+            // é‚£ä¹ˆâ€œä¸€äºŒä¸‰å››äº”â€ä¾æ¬¡ä»£è¡¨ç¬¬ä¸€ä¸ªåˆ°ç¬¬äº”ä¸ªæ£‹å­ï¼Œâ€œå‰ä¸­åâ€ä¾æ¬¡ä»£è¡¨ç¬¬ä¸€ä¸ªåˆ°ç¬¬ä¸‰ä¸ªæ£‹å­ã€‚
+            if (nPieceNum == 2 && nPos == 2 + DIRECT_TO_POS)
+            {
+                sq = FILESQ_SIDE_PIECE(pos, nPieceList[1]);
+            }
+            else
+            {
+                nPos -= (nPos >= DIRECT_TO_POS ? DIRECT_TO_POS : 0);
+                sq = (nPos >= nPieceNum ? -1 : FILESQ_SIDE_PIECE(pos, nPieceList[nPos]));
+            }
+        }
+        else
+        {
+            sq = -1;
+        }
+    }
+    if (sq == -1)
+    {
+        return 0;
+    }
+
+    // 6. ç°åœ¨å·²çŸ¥äº†ç€æ³•çš„èµ·ç‚¹ï¼Œå°±å¯ä»¥æ ¹æ®çºµçº¿è¡¨ç¤ºçš„åä¸¤ä¸ªç¬¦å·æ¥ç¡®å®šç€æ³•çš„ç»ˆç‚¹ï¼›
+    xSrc = FILESQ_FILE_X(sq);
+    ySrc = FILESQ_RANK_Y(sq);
+    if (pt == KNIGHT_TYPE)
+    {
+        // æç¤ºï¼šé©¬çš„è¿›é€€å¤„ç†æ¯”è¾ƒç‰¹æ®Šã€‚
+        xDst = Byte2Digit(FileStr.c[3]);
+        if (FileStr.c[2] == '+')
+        {
+            yDst = ySrc - 3 + ABS(xDst - xSrc);
+        }
+        else
+        {
+            yDst = ySrc + 3 - ABS(xDst - xSrc);
+        }
+    }
+    else
+    {
+        if (FileStr.c[2] == '+')
+        {
+            xDst = xSrc;
+            yDst = ySrc - Byte2Digit(FileStr.c[3]) - 1;
+        }
+        else if (FileStr.c[2] == '-')
+        {
+            xDst = xSrc;
+            yDst = ySrc + Byte2Digit(FileStr.c[3]) + 1;
+        }
+        else
+        {
+            xDst = Byte2Digit(FileStr.c[3]);
+            yDst = ySrc;
+        }
+    }
+    // æ³¨æ„ï¼šyDstæœ‰å¯èƒ½è¶…è¿‡èŒƒå›´ï¼
+    if (yDst < 0 || yDst > 9)
+    {
+        return 0;
+    }
+
+    // 7. æŠŠç›¸å¯¹èµ°å­æ–¹çš„åæ ‡è½¬æ¢ä¸ºå›ºå®šåæ ‡ï¼Œå¾—åˆ°ç€æ³•çš„èµ·ç‚¹å’Œç»ˆç‚¹ã€‚
+    if (pos.sdPlayer == 0)
+    {
+        return MOVE(FILESQ_SQUARE(FILESQ_COORD_XY(xSrc, ySrc)), FILESQ_SQUARE(FILESQ_COORD_XY(xDst, yDst)));
+    }
+    else
+    {
+        return MOVE(SQUARE_FLIP(FILESQ_SQUARE(FILESQ_COORD_XY(xSrc, ySrc))),
+                    SQUARE_FLIP(FILESQ_SQUARE(FILESQ_COORD_XY(xDst, yDst))));
+    }
 }
 
-// ½«ÄÚ²¿×Å·¨±íÊ¾×ª»»Îª×İÏß·ûºÅ
-uint32_t Move2File(int mv, const PositionStruct &pos) {
-  int i, j, sq, pc, pt, nPieceNum;
-  int xSrc, ySrc, xDst, yDst;
-  int nFileList[9], nPieceList[5];
-  C4dwStruct Ret;
+// å°†å†…éƒ¨ç€æ³•è¡¨ç¤ºè½¬æ¢ä¸ºçºµçº¿ç¬¦å·
+uint32_t Move2File(int mv, const PositionStruct &pos)
+{
+    int i, j, sq, pc, pt, nPieceNum;
+    int xSrc, ySrc, xDst, yDst;
+    int nFileList[9], nPieceList[5];
+    C4dwStruct Ret;
 
-  if (SRC(mv) == 0 || DST(mv) == 0) {
-    return 0x20202020;
-  }
-  pc = pos.ucpcSquares[SRC(mv)];
-  if (pc == 0) {
-    return 0x20202020;
-  }
-  pt = PIECE_TYPE(pc);
-  Ret.c[0] = PIECE_BYTE(pt);
-  if (pos.sdPlayer == 0) {
-    xSrc = FILESQ_FILE_X(SQUARE_FILESQ(SRC(mv)));
-    ySrc = FILESQ_RANK_Y(SQUARE_FILESQ(SRC(mv)));
-    xDst = FILESQ_FILE_X(SQUARE_FILESQ(DST(mv)));
-    yDst = FILESQ_RANK_Y(SQUARE_FILESQ(DST(mv)));
-  } else {
-    xSrc = FILESQ_FILE_X(SQUARE_FILESQ(SQUARE_FLIP(SRC(mv))));
-    ySrc = FILESQ_RANK_Y(SQUARE_FILESQ(SQUARE_FLIP(SRC(mv))));
-    xDst = FILESQ_FILE_X(SQUARE_FILESQ(SQUARE_FLIP(DST(mv))));
-    yDst = FILESQ_RANK_Y(SQUARE_FILESQ(SQUARE_FLIP(DST(mv))));
-  }
-  if (pt >= KING_TYPE && pt <= BISHOP_TYPE) {
-    Ret.c[1] = Digit2Byte(xSrc);
-  } else {
-    for (i = 0; i < 9; i ++) {
-      nFileList[i] = 0;
+    if (SRC(mv) == 0 || DST(mv) == 0)
+    {
+        return 0x20202020;
     }
-    j = (pt == PAWN_TYPE ? 5 : 2);
-    for (i = 0; i < j; i ++) {
-      sq = FILESQ_SIDE_PIECE(pos, FIRST_PIECE(pt, i));
-      if (sq != -1) {
-        nFileList[FILESQ_FILE_X(sq)] ++;
-      }
+    pc = pos.ucpcSquares[SRC(mv)];
+    if (pc == 0)
+    {
+        return 0x20202020;
     }
-    // ÌáÊ¾£º´¦Àí¡°Á½ÌõµÄ×İÏßÉÏÓĞ¶à¸ö±ø(×ä)¡±µÄÎÊÌâÉÏ£¬¿É²ÎÔÄ"File2Move()"º¯Êı¡£
-    if (nFileList[xSrc] > 1) {
-      nPieceNum = 0;
-      for (i = 0; i < j; i ++) {
-        sq = FILESQ_SIDE_PIECE(pos, FIRST_PIECE(pt, i));
-        if (sq != -1) {
-          if (nFileList[FILESQ_FILE_X(sq)] > 1) {
-            nPieceList[nPieceNum] = FIRST_PIECE(pt, i);
-            nPieceNum ++;
-          }
+    pt = PIECE_TYPE(pc);
+    Ret.c[0] = PIECE_BYTE(pt);
+    if (pos.sdPlayer == 0)
+    {
+        xSrc = FILESQ_FILE_X(SQUARE_FILESQ(SRC(mv)));
+        ySrc = FILESQ_RANK_Y(SQUARE_FILESQ(SRC(mv)));
+        xDst = FILESQ_FILE_X(SQUARE_FILESQ(DST(mv)));
+        yDst = FILESQ_RANK_Y(SQUARE_FILESQ(DST(mv)));
+    }
+    else
+    {
+        xSrc = FILESQ_FILE_X(SQUARE_FILESQ(SQUARE_FLIP(SRC(mv))));
+        ySrc = FILESQ_RANK_Y(SQUARE_FILESQ(SQUARE_FLIP(SRC(mv))));
+        xDst = FILESQ_FILE_X(SQUARE_FILESQ(SQUARE_FLIP(DST(mv))));
+        yDst = FILESQ_RANK_Y(SQUARE_FILESQ(SQUARE_FLIP(DST(mv))));
+    }
+    if (pt >= KING_TYPE && pt <= BISHOP_TYPE)
+    {
+        Ret.c[1] = Digit2Byte(xSrc);
+    }
+    else
+    {
+        for (i = 0; i < 9; i++)
+        {
+            nFileList[i] = 0;
         }
-      }
-      for (i = 0; i < nPieceNum - 1; i ++) {
-        for (j = nPieceNum - 1; j > i; j --) {
-          if (FILESQ_SIDE_PIECE(pos, nPieceList[j - 1]) > FILESQ_SIDE_PIECE(pos, nPieceList[j])) {
-            SWAP(nPieceList[j - 1], nPieceList[j]);
-          }
+        j = (pt == PAWN_TYPE ? 5 : 2);
+        for (i = 0; i < j; i++)
+        {
+            sq = FILESQ_SIDE_PIECE(pos, FIRST_PIECE(pt, i));
+            if (sq != -1)
+            {
+                nFileList[FILESQ_FILE_X(sq)]++;
+            }
         }
-      }
-      sq = FILESQ_COORD_XY(xSrc, ySrc);
-      for (i = 0; i < nPieceNum; i ++) {
-        if (FILESQ_SIDE_PIECE(pos, nPieceList[i]) == sq) {
-          break;
+        // æç¤ºï¼šå¤„ç†â€œä¸¤æ¡çš„çºµçº¿ä¸Šæœ‰å¤šä¸ªå…µ(å’)â€çš„é—®é¢˜ä¸Šï¼Œå¯å‚é˜…"File2Move()"å‡½æ•°ã€‚
+        if (nFileList[xSrc] > 1)
+        {
+            nPieceNum = 0;
+            for (i = 0; i < j; i++)
+            {
+                sq = FILESQ_SIDE_PIECE(pos, FIRST_PIECE(pt, i));
+                if (sq != -1)
+                {
+                    if (nFileList[FILESQ_FILE_X(sq)] > 1)
+                    {
+                        nPieceList[nPieceNum] = FIRST_PIECE(pt, i);
+                        nPieceNum++;
+                    }
+                }
+            }
+            for (i = 0; i < nPieceNum - 1; i++)
+            {
+                for (j = nPieceNum - 1; j > i; j--)
+                {
+                    if (FILESQ_SIDE_PIECE(pos, nPieceList[j - 1]) > FILESQ_SIDE_PIECE(pos, nPieceList[j]))
+                    {
+                        SWAP(nPieceList[j - 1], nPieceList[j]);
+                    }
+                }
+            }
+            sq = FILESQ_COORD_XY(xSrc, ySrc);
+            for (i = 0; i < nPieceNum; i++)
+            {
+                if (FILESQ_SIDE_PIECE(pos, nPieceList[i]) == sq)
+                {
+                    break;
+                }
+            }
+            Ret.c[1] = (nPieceNum == 2 && i == 1 ? ccPos2Byte[2 + DIRECT_TO_POS] : ccPos2Byte[nPieceNum > 3 ? i : i + DIRECT_TO_POS]);
         }
-      }
-      Ret.c[1] = (nPieceNum == 2 && i == 1 ? ccPos2Byte[2 + DIRECT_TO_POS] :
-          ccPos2Byte[nPieceNum > 3 ? i : i + DIRECT_TO_POS]);
-    } else {
-      Ret.c[1] = Digit2Byte(xSrc);
+        else
+        {
+            Ret.c[1] = Digit2Byte(xSrc);
+        }
     }
-  }
-  if (pt >= ADVISOR_TYPE && pt <= KNIGHT_TYPE) {
-    if (SRC(mv) == DST(mv)) {
-      Ret.c[2] = '=';
-      Ret.c[3] = 'P';
-    } else {
-      Ret.c[2] = (yDst > ySrc ? '-' : '+');
-      Ret.c[3] = Digit2Byte(xDst);
+    if (pt >= ADVISOR_TYPE && pt <= KNIGHT_TYPE)
+    {
+        if (SRC(mv) == DST(mv))
+        {
+            Ret.c[2] = '=';
+            Ret.c[3] = 'P';
+        }
+        else
+        {
+            Ret.c[2] = (yDst > ySrc ? '-' : '+');
+            Ret.c[3] = Digit2Byte(xDst);
+        }
     }
-  } else {
-    Ret.c[2] = (yDst == ySrc ? '.' : yDst > ySrc ? '-' : '+');
-    Ret.c[3] = (yDst == ySrc ? Digit2Byte(xDst) : Digit2Byte(ABS(ySrc - yDst) - 1));
-  }
-  return Ret.dw;
+    else
+    {
+        Ret.c[2] = (yDst == ySrc ? '.' : yDst > ySrc ? '-'
+                                                     : '+');
+        Ret.c[3] = (yDst == ySrc ? Digit2Byte(xDst) : Digit2Byte(ABS(ySrc - yDst) - 1));
+    }
+    return Ret.dw;
 }
