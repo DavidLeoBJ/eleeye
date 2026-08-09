@@ -18,7 +18,8 @@ mkdir -p "$OUT/x86_64"
 
 SRCS="eleeye/xiangqi_jni.cpp eleeye/book.cpp eleeye/evaluate.cpp \
 eleeye/genmoves.cpp eleeye/hash.cpp eleeye/movesort.cpp eleeye/position.cpp \
-eleeye/preeval.cpp eleeye/pregen.cpp eleeye/search.cpp eleeye/book_manager_forengine.cpp "
+eleeye/preeval.cpp eleeye/pregen.cpp eleeye/search.cpp eleeye/book_manager.cpp \
+eleeye/book_common.cpp eleeye/book_endgame_normalizer.cpp"
 
 INCS="-Ieleeye -Ieleeye/Position -Ieleeye/Search"
 

@@ -485,6 +485,7 @@ extern "C"
             {
                 it->wvl = (uint16_t)weight;
                 env->ReleaseStringUTFChars(fen, cfen);
+                internalSaveBook();
                 return JNI_TRUE;
             }
         }
