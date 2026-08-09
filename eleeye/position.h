@@ -24,39 +24,39 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../base/base.h"
 #include "pregen.h"
 
-/* ElephantEyeÔ´³ÌĞòÊ¹ÓÃµÄĞÙÑÀÀû¼ÇºÅÔ¼¶¨£º
+/* ElephantEyeæºç¨‹åºä½¿ç”¨çš„åŒˆç‰™åˆ©è®°å·çº¦å®šï¼š
  *
- * sq: ¸ñ×ÓĞòºÅ(ÕûÊı£¬´Ó0µ½255£¬²ÎÔÄ"pregen.cpp")
- * pc: Æå×ÓĞòºÅ(ÕûÊı£¬´Ó0µ½47£¬²ÎÔÄ"position.cpp")
- * pt: Æå×ÓÀàĞÍĞòºÅ(ÕûÊı£¬´Ó0µ½6£¬²ÎÔÄ"position.cpp")
- * mv: ×Å·¨(ÕûÊı£¬´Ó0µ½65535£¬²ÎÔÄ"position.cpp")
- * sd: ×ß×Ó·½(ÕûÊı£¬0´ú±íºì·½£¬1´ú±íºÚ·½)
- * vl: ¾ÖÃæ¼ÛÖµ(ÕûÊı£¬´Ó"-MATE_VALUE"µ½"MATE_VALUE"£¬²ÎÔÄ"position.cpp")
- * (×¢£ºÒÔÉÏËÄ¸ö¼ÇºÅ¿ÉÓëuc¡¢dwµÈ´ú±íÕûÊıµÄ¼ÇºÅÅäºÏÊ¹ÓÃ)
- * pos: ¾ÖÃæ(PositionStructÀàĞÍ£¬²ÎÔÄ"position.h")
- * sms: Î»ĞĞºÍÎ»ÁĞµÄ×Å·¨Éú³ÉÔ¤ÖÃ½á¹¹(²ÎÔÄ"pregen.h")
- * smv: Î»ĞĞºÍÎ»ÁĞµÄ×Å·¨ÅĞ¶ÏÔ¤ÖÃ½á¹¹(²ÎÔÄ"pregen.h")
+ * sq: æ ¼å­åºå·(æ•´æ•°ï¼Œä»0åˆ°255ï¼Œå‚é˜…"pregen.cpp")
+ * pc: æ£‹å­åºå·(æ•´æ•°ï¼Œä»0åˆ°47ï¼Œå‚é˜…"position.cpp")
+ * pt: æ£‹å­ç±»å‹åºå·(æ•´æ•°ï¼Œä»0åˆ°6ï¼Œå‚é˜…"position.cpp")
+ * mv: ç€æ³•(æ•´æ•°ï¼Œä»0åˆ°65535ï¼Œå‚é˜…"position.cpp")
+ * sd: èµ°å­æ–¹(æ•´æ•°ï¼Œ0ä»£è¡¨çº¢æ–¹ï¼Œ1ä»£è¡¨é»‘æ–¹)
+ * vl: å±€é¢ä»·å€¼(æ•´æ•°ï¼Œä»"-MATE_VALUE"åˆ°"MATE_VALUE"ï¼Œå‚é˜…"position.cpp")
+ * (æ³¨ï¼šä»¥ä¸Šå››ä¸ªè®°å·å¯ä¸ucã€dwç­‰ä»£è¡¨æ•´æ•°çš„è®°å·é…åˆä½¿ç”¨)
+ * pos: å±€é¢(PositionStructç±»å‹ï¼Œå‚é˜…"position.h")
+ * sms: ä½è¡Œå’Œä½åˆ—çš„ç€æ³•ç”Ÿæˆé¢„ç½®ç»“æ„(å‚é˜…"pregen.h")
+ * smv: ä½è¡Œå’Œä½åˆ—çš„ç€æ³•åˆ¤æ–­é¢„ç½®ç»“æ„(å‚é˜…"pregen.h")
  */
 
 #ifndef POSITION_H
 #define POSITION_H
 
-const int MAX_MOVE_NUM = 1024;  // ¾ÖÃæÄÜÈİÄÉµÄ»Ø¹ö×Å·¨Êı
-const int MAX_GEN_MOVES = 128;  // ËÑË÷µÄ×î´ó×Å·¨Êı£¬ÖĞ¹úÏóÆåµÄÈÎºÎ¾ÖÃæ¶¼²»»á³¬¹ı120¸ö×Å·¨
-const int DRAW_MOVES = 100;     // Ä¬ÈÏµÄºÍÆå×Å·¨Êı£¬ElephantEyeÉè¶¨ÔÚ50»ØºÏ¼´100²½£¬µ«½«¾üºÍÓ¦½«²»¼ÆÈëÆäÖĞ
-const int REP_HASH_MASK = 4095; // ÅĞ¶ÏÖØ¸´¾ÖÃæµÄÃÔÄãÖÃ»»±í³¤¶È£¬¼´4096¸ö±íÏî
+const int MAX_MOVE_NUM = 1024;  // å±€é¢èƒ½å®¹çº³çš„å›æ»šç€æ³•æ•°
+const int MAX_GEN_MOVES = 128;  // æœç´¢çš„æœ€å¤§ç€æ³•æ•°ï¼Œä¸­å›½è±¡æ£‹çš„ä»»ä½•å±€é¢éƒ½ä¸ä¼šè¶…è¿‡120ä¸ªç€æ³•
+const int DRAW_MOVES = 100;     // é»˜è®¤çš„å’Œæ£‹ç€æ³•æ•°ï¼ŒElephantEyeè®¾å®šåœ¨50å›åˆå³100æ­¥ï¼Œä½†å°†å†›å’Œåº”å°†ä¸è®¡å…¥å…¶ä¸­
+const int REP_HASH_MASK = 4095; // åˆ¤æ–­é‡å¤å±€é¢çš„è¿·ä½ ç½®æ¢è¡¨é•¿åº¦ï¼Œå³4096ä¸ªè¡¨é¡¹
 
-const int MATE_VALUE = 10000;           // ×î¸ß·ÖÖµ£¬¼´½«ËÀµÄ·ÖÖµ
-const int BAN_VALUE = MATE_VALUE - 100; // ³¤½«ÅĞ¸ºµÄ·ÖÖµ£¬µÍÓÚ¸ÃÖµ½«²»Ğ´ÈëÖÃ»»±í(²ÎÔÄ"hash.cpp")
-const int WIN_VALUE = MATE_VALUE - 200; // ËÑË÷³öÊ¤¸ºµÄ·ÖÖµ½çÏŞ£¬³¬³ö´ËÖµ¾ÍËµÃ÷ÒÑ¾­ËÑË÷³öÉ±ÆåÁË
-const int NULLOKAY_MARGIN = 200;        // ¿Õ×Å²Ã¼ô¿ÉÒÔ²»¼ìÑéµÄ×ÓÁ¦¼ÛÖµ±ß½ç
-const int NULLSAFE_MARGIN = 400;        // ÔÊĞíÊ¹ÓÃ¿Õ×Å²Ã¼ôµÄÌõ¼şµÄ×ÓÁ¦¼ÛÖµ±ß½ç
-const int DRAW_VALUE = 20;              // ºÍÆåÊ±·µ»ØµÄ·ÖÊı(È¡¸ºÖµ)
+const int MATE_VALUE = 10000;           // æœ€é«˜åˆ†å€¼ï¼Œå³å°†æ­»çš„åˆ†å€¼
+const int BAN_VALUE = MATE_VALUE - 100; // é•¿å°†åˆ¤è´Ÿçš„åˆ†å€¼ï¼Œä½äºè¯¥å€¼å°†ä¸å†™å…¥ç½®æ¢è¡¨(å‚é˜…"hash.cpp")
+const int WIN_VALUE = MATE_VALUE - 200; // æœç´¢å‡ºèƒœè´Ÿçš„åˆ†å€¼ç•Œé™ï¼Œè¶…å‡ºæ­¤å€¼å°±è¯´æ˜å·²ç»æœç´¢å‡ºæ€æ£‹äº†
+const int NULLOKAY_MARGIN = 200;        // ç©ºç€è£å‰ªå¯ä»¥ä¸æ£€éªŒçš„å­åŠ›ä»·å€¼è¾¹ç•Œ
+const int NULLSAFE_MARGIN = 400;        // å…è®¸ä½¿ç”¨ç©ºç€è£å‰ªçš„æ¡ä»¶çš„å­åŠ›ä»·å€¼è¾¹ç•Œ
+const int DRAW_VALUE = 20;              // å’Œæ£‹æ—¶è¿”å›çš„åˆ†æ•°(å–è´Ÿå€¼)
 
-const bool CHECK_LAZY = true;   // ÍµÀÁ¼ì²â½«¾ü
-const int CHECK_MULTI = 48;     // ±»¶à¸ö×Ó½«¾ü
+const bool CHECK_LAZY = true; // å·æ‡’æ£€æµ‹å°†å†›
+const int CHECK_MULTI = 48;   // è¢«å¤šä¸ªå­å°†å†›
 
-// Ã¿ÖÖ×ÓÁ¦µÄÀàĞÍ±àºÅ
+// æ¯ç§å­åŠ›çš„ç±»å‹ç¼–å·
 const int KING_TYPE = 0;
 const int ADVISOR_TYPE = 1;
 const int BISHOP_TYPE = 2;
@@ -65,7 +65,7 @@ const int ROOK_TYPE = 4;
 const int CANNON_TYPE = 5;
 const int PAWN_TYPE = 6;
 
-// Ã¿ÖÖ×ÓÁ¦µÄ¿ªÊ¼ĞòºÅºÍ½áÊøĞòºÅ
+// æ¯ç§å­åŠ›çš„å¼€å§‹åºå·å’Œç»“æŸåºå·
 const int KING_FROM = 0;
 const int ADVISOR_FROM = 1;
 const int ADVISOR_TO = 2;
@@ -80,7 +80,7 @@ const int CANNON_TO = 10;
 const int PAWN_FROM = 11;
 const int PAWN_TO = 15;
 
-// ¸÷ÖÖ×ÓÁ¦µÄÆÁ±ÎÎ»
+// å„ç§å­åŠ›çš„å±è”½ä½
 const int KING_BITPIECE = 1 << KING_FROM;
 const int ADVISOR_BITPIECE = (1 << ADVISOR_FROM) | (1 << ADVISOR_TO);
 const int BISHOP_BITPIECE = (1 << BISHOP_FROM) | (1 << BISHOP_TO);
@@ -88,300 +88,347 @@ const int KNIGHT_BITPIECE = (1 << KNIGHT_FROM) | (1 << KNIGHT_TO);
 const int ROOK_BITPIECE = (1 << ROOK_FROM) | (1 << ROOK_TO);
 const int CANNON_BITPIECE = (1 << CANNON_FROM) | (1 << CANNON_TO);
 const int PAWN_BITPIECE = (1 << PAWN_FROM) | (1 << (PAWN_FROM + 1)) |
-    (1 << (PAWN_FROM + 2)) | (1 << (PAWN_FROM + 3)) | (1 << PAWN_TO);
+                          (1 << (PAWN_FROM + 2)) | (1 << (PAWN_FROM + 3)) | (1 << PAWN_TO);
 const int ATTACK_BITPIECE = KNIGHT_BITPIECE | ROOK_BITPIECE | CANNON_BITPIECE | PAWN_BITPIECE;
 
-inline uint32_t BIT_PIECE(int pc) {
-  return 1 << (pc - 16);
+inline uint32_t BIT_PIECE(int pc)
+{
+    return 1 << (pc - 16);
 }
 
-inline uint32_t WHITE_BITPIECE(int nBitPiece) {
-  return nBitPiece;
+inline uint32_t WHITE_BITPIECE(int nBitPiece)
+{
+    return nBitPiece;
 }
 
-inline uint32_t BLACK_BITPIECE(int nBitPiece) {
-  return nBitPiece << 16;
+inline uint32_t BLACK_BITPIECE(int nBitPiece)
+{
+    return nBitPiece << 16;
 }
 
-inline uint32_t BOTH_BITPIECE(int nBitPiece) {
-  return nBitPiece + (nBitPiece << 16);
+inline uint32_t BOTH_BITPIECE(int nBitPiece)
+{
+    return nBitPiece + (nBitPiece << 16);
 }
 
-// "RepStatus()"·µ»ØµÄÖØ¸´±ê¼ÇÎ»
+// "RepStatus()"è¿”å›çš„é‡å¤æ ‡è®°ä½
 const int REP_NONE = 0;
 const int REP_DRAW = 1;
 const int REP_LOSS = 3;
 const int REP_WIN = 5;
 
-/* ElephantEyeµÄºÜ¶à´úÂëÖĞ¶¼ÓÃµ½"SIDE_TAG()"Õâ¸öÁ¿£¬ºì·½ÉèÎª16£¬ºÚ·½ÉèÎª32¡£
- * ÓÃ"SIDE_TAG() + i"¿ÉÒÔ·½±ãµØÑ¡ÔñÆå×ÓµÄÀàĞÍ£¬"i"´Ó0µ½15ÒÀ´ÎÊÇ£º
- * Ë§ÊËÊËÏàÏàÂíÂí³µ³µÅÚÅÚ±ø±ø±ø±ø±ø(½«Ê¿Ê¿ÏóÏóÂíÂí³µ³µÅÚÅÚ×ä×ä×ä×ä×ä)
- * ÀıÈç"i"È¡"KNIGHT_FROM"µ½"KNIGHT_TO"£¬Ôò±íÊ¾ÒÀ´Î¼ì²éÁ½¸öÂíµÄÎ»ÖÃ
+/* ElephantEyeçš„å¾ˆå¤šä»£ç ä¸­éƒ½ç”¨åˆ°"SIDE_TAG()"è¿™ä¸ªé‡ï¼Œçº¢æ–¹è®¾ä¸º16ï¼Œé»‘æ–¹è®¾ä¸º32ã€‚
+ * ç”¨"SIDE_TAG() + i"å¯ä»¥æ–¹ä¾¿åœ°é€‰æ‹©æ£‹å­çš„ç±»å‹ï¼Œ"i"ä»0åˆ°15ä¾æ¬¡æ˜¯ï¼š
+ * å¸…ä»•ä»•ç›¸ç›¸é©¬é©¬è½¦è½¦ç‚®ç‚®å…µå…µå…µå…µå…µ(å°†å£«å£«è±¡è±¡é©¬é©¬è½¦è½¦ç‚®ç‚®å’å’å’å’å’)
+ * ä¾‹å¦‚"i"å–"KNIGHT_FROM"åˆ°"KNIGHT_TO"ï¼Œåˆ™è¡¨ç¤ºä¾æ¬¡æ£€æŸ¥ä¸¤ä¸ªé©¬çš„ä½ç½®
  */
-inline int SIDE_TAG(int sd) {
-  return 16 + (sd << 4);
+inline int SIDE_TAG(int sd)
+{
+    return 16 + (sd << 4);
 }
 
-inline int OPP_SIDE_TAG(int sd) {
-  return 32 - (sd << 4);
+inline int OPP_SIDE_TAG(int sd)
+{
+    return 32 - (sd << 4);
 }
 
-inline int SIDE_VALUE(int sd, int vl) {
-  return (sd == 0 ? vl : -vl);
+inline int SIDE_VALUE(int sd, int vl)
+{
+    return (sd == 0 ? vl : -vl);
 }
 
-inline int PIECE_INDEX(int pc) {
-  return pc & 15;
+inline int PIECE_INDEX(int pc)
+{
+    return pc & 15;
 }
 
-extern const char *const cszStartFen;     // ÆğÊ¼¾ÖÃæµÄFEN´®
-extern const char *const cszPieceBytes;   // Æå×ÓÀàĞÍ¶ÔÓ¦µÄÆå×Ó·ûºÅ
-extern const int cnPieceTypes[48];        // Æå×ÓĞòºÅ¶ÔÓ¦µÄÆå×ÓÀàĞÍ
-extern const int cnSimpleValues[48];      // Æå×ÓµÄ¼òµ¥·ÖÖµ
-extern const uint8_t cucsqMirrorTab[256]; // ×ø±êµÄ¾µÏñ(×óÓÒ¶Ô³Æ)Êı×é
+extern const char *const cszStartFen;     // èµ·å§‹å±€é¢çš„FENä¸²
+extern const char *const cszPieceBytes;   // æ£‹å­ç±»å‹å¯¹åº”çš„æ£‹å­ç¬¦å·
+extern const int cnPieceTypes[48];        // æ£‹å­åºå·å¯¹åº”çš„æ£‹å­ç±»å‹
+extern const int cnSimpleValues[48];      // æ£‹å­çš„ç®€å•åˆ†å€¼
+extern const uint8_t cucsqMirrorTab[256]; // åæ ‡çš„é•œåƒ(å·¦å³å¯¹ç§°)æ•°ç»„
 
-inline char PIECE_BYTE(int pt) {
-  return cszPieceBytes[pt];
+inline char PIECE_BYTE(int pt)
+{
+    return cszPieceBytes[pt];
 }
 
-inline int PIECE_TYPE(int pc) {
-  return cnPieceTypes[pc];
+inline int PIECE_TYPE(int pc)
+{
+    return cnPieceTypes[pc];
 }
 
-inline int SIMPLE_VALUE(int pc) {
-  return cnSimpleValues[pc];
+inline int SIMPLE_VALUE(int pc)
+{
+    return cnSimpleValues[pc];
 }
 
-inline uint8_t SQUARE_MIRROR(int sq) {
-  return cucsqMirrorTab[sq];
+inline uint8_t SQUARE_MIRROR(int sq)
+{
+    return cucsqMirrorTab[sq];
 }
 
-// FEN´®ÖĞÆå×Ó±êÊ¶
+// FENä¸²ä¸­æ£‹å­æ ‡è¯†
 int FenPiece(int Arg);
 
-// ¸´ÔÓ×Å·¨½á¹¹
-union MoveStruct {
-  uint32_t dwmv;           // ÌîÂúÕû¸ö½á¹¹ÓÃ
-  struct {
-    uint16_t wmv, wvl;     // ×Å·¨ºÍ·ÖÖµ
-  };
-  struct {
-    uint8_t Src, Dst;      // ÆğÊ¼¸ñºÍÄ¿±ê¸ñ
-    int8_t CptDrw, ChkChs; // ±»³Ô×Ó(+)/ºÍÆå×Å·¨Êı(-)¡¢½«¾ü×Ó(+)/±»×½×Ó(-)
-  };
+// å¤æ‚ç€æ³•ç»“æ„
+union MoveStruct
+{
+    uint32_t dwmv; // å¡«æ»¡æ•´ä¸ªç»“æ„ç”¨
+    struct
+    {
+        uint16_t wmv, wvl; // ç€æ³•å’Œåˆ†å€¼
+    };
+    struct
+    {
+        uint8_t Src, Dst;      // èµ·å§‹æ ¼å’Œç›®æ ‡æ ¼
+        int8_t CptDrw, ChkChs; // è¢«åƒå­(+)/å’Œæ£‹ç€æ³•æ•°(-)ã€å°†å†›å­(+)/è¢«æ‰å­(-)
+    };
 }; // mvs
 
-// ×Å·¨½á¹¹
-inline int SRC(int mv) { // µÃµ½×Å·¨µÄÆğµã
-  return mv & 255;
+// ç€æ³•ç»“æ„
+inline int SRC(int mv)
+{ // å¾—åˆ°ç€æ³•çš„èµ·ç‚¹
+    return mv & 255;
 }
 
-inline int DST(int mv) { // µÃµ½×Å·¨µÄÖÕµã
-  return mv >> 8;
+inline int DST(int mv)
+{ // å¾—åˆ°ç€æ³•çš„ç»ˆç‚¹
+    return mv >> 8;
 }
 
-inline int MOVE(int sqSrc, int sqDst) {   // ÓÉÆğµãºÍÖÕµãµÃµ½×Å·¨
-  return sqSrc + (sqDst << 8);
+inline int MOVE(int sqSrc, int sqDst)
+{ // ç”±èµ·ç‚¹å’Œç»ˆç‚¹å¾—åˆ°ç€æ³•
+    return sqSrc + (sqDst << 8);
 }
 
-inline uint32_t MOVE_COORD(int mv) {      // °Ñ×Å·¨×ª»»³É×Ö·û´®
-  union {
-    char c[4];
-    uint32_t dw;
-  } Ret;
-  Ret.c[0] = FILE_X(SRC(mv)) - FILE_LEFT + 'a';
-  Ret.c[1] = '9' - RANK_Y(SRC(mv)) + RANK_TOP;
-  Ret.c[2] = FILE_X(DST(mv)) - FILE_LEFT + 'a';
-  Ret.c[3] = '9' - RANK_Y(DST(mv)) + RANK_TOP;
-  // ¶ÏÑÔÊä³ö×Å·¨µÄºÏÀíĞÔ
-  __ASSERT_BOUND('a', Ret.c[0], 'i');
-  __ASSERT_BOUND('0', Ret.c[1], '9');
-  __ASSERT_BOUND('a', Ret.c[2], 'i');
-  __ASSERT_BOUND('0', Ret.c[3], '9');
-  return Ret.dw;
+inline uint32_t MOVE_COORD(int mv)
+{ // æŠŠç€æ³•è½¬æ¢æˆå­—ç¬¦ä¸²
+    union
+    {
+        char c[4];
+        uint32_t dw;
+    } Ret;
+    Ret.c[0] = FILE_X(SRC(mv)) - FILE_LEFT + 'a';
+    Ret.c[1] = '9' - RANK_Y(SRC(mv)) + RANK_TOP;
+    Ret.c[2] = FILE_X(DST(mv)) - FILE_LEFT + 'a';
+    Ret.c[3] = '9' - RANK_Y(DST(mv)) + RANK_TOP;
+    // æ–­è¨€è¾“å‡ºç€æ³•çš„åˆç†æ€§
+    __ASSERT_BOUND('a', Ret.c[0], 'i');
+    __ASSERT_BOUND('0', Ret.c[1], '9');
+    __ASSERT_BOUND('a', Ret.c[2], 'i');
+    __ASSERT_BOUND('0', Ret.c[3], '9');
+    return Ret.dw;
 }
 
-inline int COORD_MOVE(uint32_t dwMoveStr) { // °Ñ×Ö·û´®×ª»»³É×Å·¨
-  int sqSrc, sqDst;
-  char *lpArgPtr;
-  lpArgPtr = (char *) &dwMoveStr;
-  sqSrc = COORD_XY(lpArgPtr[0] - 'a' + FILE_LEFT, '9' - lpArgPtr[1] + RANK_TOP);
-  sqDst = COORD_XY(lpArgPtr[2] - 'a' + FILE_LEFT, '9' - lpArgPtr[3] + RANK_TOP);
-  // ¶ÔÊäÈë×Å·¨µÄºÏÀíĞÔ²»×÷¶ÏÑÔ
-  // __ASSERT_SQUARE(sqSrc);
-  // __ASSERT_SQUARE(sqDst);
-  return (IN_BOARD(sqSrc) && IN_BOARD(sqDst) ? MOVE(sqSrc, sqDst) : 0);
+inline int COORD_MOVE(uint32_t dwMoveStr)
+{ // æŠŠå­—ç¬¦ä¸²è½¬æ¢æˆç€æ³•
+    int sqSrc, sqDst;
+    char *lpArgPtr;
+    lpArgPtr = (char *)&dwMoveStr;
+    sqSrc = COORD_XY(lpArgPtr[0] - 'a' + FILE_LEFT, '9' - lpArgPtr[1] + RANK_TOP);
+    sqDst = COORD_XY(lpArgPtr[2] - 'a' + FILE_LEFT, '9' - lpArgPtr[3] + RANK_TOP);
+    // å¯¹è¾“å…¥ç€æ³•çš„åˆç†æ€§ä¸ä½œæ–­è¨€
+    // __ASSERT_SQUARE(sqSrc);
+    // __ASSERT_SQUARE(sqDst);
+    return (IN_BOARD(sqSrc) && IN_BOARD(sqDst) ? MOVE(sqSrc, sqDst) : 0);
 }
 
-inline int MOVE_MIRROR(int mv) {          // ¶Ô×Å·¨×ö¾µÏñ
-  return MOVE(SQUARE_MIRROR(SRC(mv)), SQUARE_MIRROR(DST(mv)));
+inline int MOVE_MIRROR(int mv)
+{ // å¯¹ç€æ³•åšé•œåƒ
+    return MOVE(SQUARE_MIRROR(SRC(mv)), SQUARE_MIRROR(DST(mv)));
 }
 
-// »Ø¹ö½á¹¹
-struct RollbackStruct {
-  ZobristStruct zobr;   // Zobrist
-  int vlWhite, vlBlack; // ºì·½ºÍºÚ·½µÄ×ÓÁ¦¼ÛÖµ
-  MoveStruct mvs;       // ×Å·¨
+// å›æ»šç»“æ„
+struct RollbackStruct
+{
+    ZobristStruct zobr;   // Zobrist
+    int vlWhite, vlBlack; // çº¢æ–¹å’Œé»‘æ–¹çš„å­åŠ›ä»·å€¼
+    MoveStruct mvs;       // ç€æ³•
 }; // rbs
 
-const bool DEL_PIECE = true; // º¯Êı"PositionStruct::AddPiece()"µÄÑ¡Ïî
+const bool DEL_PIECE = true; // å‡½æ•°"PositionStruct::AddPiece()"çš„é€‰é¡¹
 
-// ¾ÖÃæ½á¹¹
-struct PositionStruct {
-  // »ù±¾³ÉÔ±
-  int sdPlayer;             // ÂÖµ½ÄÄ·½×ß£¬0±íÊ¾ºì·½£¬1±íÊ¾ºÚ·½
-  uint8_t ucpcSquares[256]; // Ã¿¸ö¸ñ×Ó·ÅµÄÆå×Ó£¬0±íÊ¾Ã»ÓĞÆå×Ó
-  uint8_t ucsqPieces[48];   // Ã¿¸öÆå×Ó·ÅµÄÎ»ÖÃ£¬0±íÊ¾±»³Ô
-  ZobristStruct zobr;       // Zobrist
+// å±€é¢ç»“æ„
+struct PositionStruct
+{
+    // åŸºæœ¬æˆå‘˜
+    int sdPlayer;             // è½®åˆ°å“ªæ–¹èµ°ï¼Œ0è¡¨ç¤ºçº¢æ–¹ï¼Œ1è¡¨ç¤ºé»‘æ–¹
+    uint8_t ucpcSquares[256]; // æ¯ä¸ªæ ¼å­æ”¾çš„æ£‹å­ï¼Œ0è¡¨ç¤ºæ²¡æœ‰æ£‹å­
+    uint8_t ucsqPieces[48];   // æ¯ä¸ªæ£‹å­æ”¾çš„ä½ç½®ï¼Œ0è¡¨ç¤ºè¢«åƒ
+    ZobristStruct zobr;       // Zobrist
 
-  // Î»½á¹¹³ÉÔ±£¬ÓÃÀ´ÔöÇ¿ÆåÅÌµÄ´¦Àí
-  union {
-    uint32_t dwBitPiece;    // 32Î»µÄÆå×ÓÎ»£¬0µ½31Î»ÒÀ´Î±íÊ¾ĞòºÅÎª16µ½47µÄÆå×ÓÊÇ·ñ»¹ÔÚÆåÅÌÉÏ
-    uint16_t wBitPiece[2];  // ²ğ·Ö³ÉÁ½¸ö
-  };
-  uint16_t wBitRanks[16];   // Î»ĞĞÊı×é£¬×¢ÒâÓÃ·¨ÊÇ"wBitRanks[RANK_Y(sq)]"
-  uint16_t wBitFiles[16];   // Î»ÁĞÊı×é£¬×¢ÒâÓÃ·¨ÊÇ"wBitFiles[FILE_X(sq)]"
+    // ä½ç»“æ„æˆå‘˜ï¼Œç”¨æ¥å¢å¼ºæ£‹ç›˜çš„å¤„ç†
+    union
+    {
+        uint32_t dwBitPiece;   // 32ä½çš„æ£‹å­ä½ï¼Œ0åˆ°31ä½ä¾æ¬¡è¡¨ç¤ºåºå·ä¸º16åˆ°47çš„æ£‹å­æ˜¯å¦è¿˜åœ¨æ£‹ç›˜ä¸Š
+        uint16_t wBitPiece[2]; // æ‹†åˆ†æˆä¸¤ä¸ª
+    };
+    uint16_t wBitRanks[16]; // ä½è¡Œæ•°ç»„ï¼Œæ³¨æ„ç”¨æ³•æ˜¯"wBitRanks[RANK_Y(sq)]"
+    uint16_t wBitFiles[16]; // ä½åˆ—æ•°ç»„ï¼Œæ³¨æ„ç”¨æ³•æ˜¯"wBitFiles[FILE_X(sq)]"
 
-  // ¾ÖÃæÆÀ¼ÛÊı¾İ
-  int vlWhite, vlBlack;   // ºì·½ºÍºÚ·½µÄ×ÓÁ¦¼ÛÖµ
+    // å±€é¢è¯„ä»·æ•°æ®
+    int vlWhite, vlBlack; // çº¢æ–¹å’Œé»‘æ–¹çš„å­åŠ›ä»·å€¼
 
-  // »Ø¹ö×Å·¨£¬ÓÃÀ´¼ì²âÑ­»·¾ÖÃæ
-  int nMoveNum, nDistance;              // »Ø¹ö×Å·¨ÊıºÍËÑË÷Éî¶È
-  RollbackStruct rbsList[MAX_MOVE_NUM]; // »Ø¹öÁĞ±í
-  uint8_t ucRepHash[REP_HASH_MASK + 1]; // ÅĞ¶ÏÖØ¸´¾ÖÃæµÄÃÔÄãÖÃ»»±í
+    // å›æ»šç€æ³•ï¼Œç”¨æ¥æ£€æµ‹å¾ªç¯å±€é¢
+    int nMoveNum, nDistance;              // å›æ»šç€æ³•æ•°å’Œæœç´¢æ·±åº¦
+    RollbackStruct rbsList[MAX_MOVE_NUM]; // å›æ»šåˆ—è¡¨
+    uint8_t ucRepHash[REP_HASH_MASK + 1]; // åˆ¤æ–­é‡å¤å±€é¢çš„è¿·ä½ ç½®æ¢è¡¨
 
-  // »ñÈ¡×Å·¨Ô¤Éú³ÉĞÅÏ¢
-  SlideMoveStruct *RankMovePtr(int x, int y) const {
-    return PreGen.smvRankMoveTab[x - FILE_LEFT] + wBitRanks[y];
-  }
-  SlideMoveStruct *FileMovePtr(int x, int y) const {
-    return PreGen.smvFileMoveTab[y - RANK_TOP] + wBitFiles[x];
-  }
-  SlideMaskStruct *RankMaskPtr(int x, int y) const {
-    return PreGen.smsRankMaskTab[x - FILE_LEFT] + wBitRanks[y];
-  }
-  SlideMaskStruct *FileMaskPtr(int x, int y) const {
-    return PreGen.smsFileMaskTab[y - RANK_TOP] + wBitFiles[x];
-  }
-
-  // ÆåÅÌ´¦Àí¹ı³Ì
-  void ClearBoard(void) { // ÆåÅÌ³õÊ¼»¯
-    sdPlayer = 0;
-    memset(ucpcSquares, 0, 256);
-    memset(ucsqPieces, 0, 48);
-    zobr.InitZero();
-    dwBitPiece = 0;
-    memset(wBitRanks, 0, 16 * sizeof(uint16_t));
-    memset(wBitFiles, 0, 16 * sizeof(uint16_t));
-    vlWhite = vlBlack = 0;
-    // "ClearBoard()"ºóÃæ½ô¸úµÄÊÇ"SetIrrev()"£¬À´³õÊ¼»¯ÆäËü³ÉÔ±
-  }
-  void ChangeSide(void) { // ½»»»×ßÆå·½
-    sdPlayer = OPP_SIDE(sdPlayer);
-    zobr.Xor(PreGen.zobrPlayer);
-  }
-  void SaveStatus(void) { // ±£´æ×´Ì¬
-    RollbackStruct *lprbs;
-    lprbs = rbsList + nMoveNum;
-    lprbs->zobr = zobr;
-    lprbs->vlWhite = vlWhite;
-    lprbs->vlBlack = vlBlack;
-  }
-  void Rollback(void) {   // »Ø¹ö
-    RollbackStruct *lprbs;
-    lprbs = rbsList + nMoveNum;
-    zobr = lprbs->zobr;
-    vlWhite = lprbs->vlWhite;
-    vlBlack = lprbs->vlBlack;
-  }
-  void AddPiece(int sq, int pc, bool bDel = false); // ÆåÅÌÉÏÔö¼ÓÆå×Ó
-  int MovePiece(int mv);                            // ÒÆ¶¯Æå×Ó
-  void UndoMovePiece(int mv, int pcCaptured);       // ³·ÏûÒÆ¶¯Æå×Ó
-  int Promote(int sq);                              // Éı±ä
-  void UndoPromote(int sq, int pcCaptured);         // ³·ÏûÉı±ä
-
-  // ×Å·¨´¦Àí¹ı³Ì
-  bool MakeMove(int mv);   // Ö´ĞĞÒ»¸ö×Å·¨
-  void UndoMakeMove(void); // ³·ÏûÒ»¸ö×Å·¨
-  void NullMove(void);     // Ö´ĞĞÒ»¸ö¿Õ×Å
-  void UndoNullMove(void); // ³·ÏûÒ»¸ö¿Õ×Å
-  void SetIrrev(void) {    // °Ñ¾ÖÃæÉè³É¡°²»¿ÉÄæ¡±£¬¼´Çå³ı»Ø¹ö×Å·¨
-    rbsList[0].mvs.dwmv = 0; // wmv, Chk, CptDrw, ChkChs = 0
-    rbsList[0].mvs.ChkChs = CheckedBy();
-    nMoveNum = 1;
-    nDistance = 0;
-    memset(ucRepHash, 0, REP_HASH_MASK + 1);
-  }
-
-  // ¾ÖÃæ´¦Àí¹ı³Ì
-  void FromFen(const char *szFen); // FEN´®Ê¶±ğ
-  void ToFen(char *szFen) const;   // Éú³ÉFEN´®
-  void Mirror(void);               // ¾ÖÃæ¾µÏñ
-
-  // ×Å·¨¼ì²â¹ı³Ì
-  bool GoodCap(int mv) const {     // ºÃµÄ³Ô×Ó×Å·¨¼ì²â£¬ÕâÑùµÄ×Å·¨²»¼ÇÂ¼µ½ÀúÊ·±íºÍÉ±ÊÖ×Å·¨±íÖĞ
-    int pcMoved, pcCaptured;
-    pcCaptured = ucpcSquares[DST(mv)];
-    if (pcCaptured == 0) {
-      return false;
+    // è·å–ç€æ³•é¢„ç”Ÿæˆä¿¡æ¯
+    SlideMoveStruct *RankMovePtr(int x, int y) const
+    {
+        return PreGen.smvRankMoveTab[x - FILE_LEFT] + wBitRanks[y];
     }
-    if (!Protected(OPP_SIDE(sdPlayer), DST(mv))) {
-      return true;
+    SlideMoveStruct *FileMovePtr(int x, int y) const
+    {
+        return PreGen.smvFileMoveTab[y - RANK_TOP] + wBitFiles[x];
     }
-    pcMoved = ucpcSquares[SRC(mv)];
-    return SIMPLE_VALUE(pcCaptured) > SIMPLE_VALUE(pcMoved);
-  }
-  bool LegalMove(int mv) const;            // ×Å·¨ºÏÀíĞÔ¼ì²â£¬½öÓÃÔÚ¡°É±ÊÖ×Å·¨¡±µÄ¼ì²âÖĞ
-  int CheckedBy(bool bLazy = false) const; // ±»ÄÄ¸ö×Ó½«¾ü
-  bool IsMate(void);                       // ÅĞ¶ÏÊÇÒÑ±»½«ËÀ
-  MoveStruct LastMove(void) const {        // Ç°Ò»²½×Å·¨£¬¸Ã×Å·¨±£´æÁË¾ÖÃæµÄ½«¾ü×´Ì¬
-    return rbsList[nMoveNum - 1].mvs;
-  }
-  bool CanPromote(void) const {            // ÅĞ¶ÏÊÇ·ñÄÜÉı±ä
-    return (wBitPiece[sdPlayer] & PAWN_BITPIECE) != PAWN_BITPIECE && LastMove().ChkChs <= 0;
-  }
-  bool NullOkay(void) const {              // ÔÊĞíÊ¹ÓÃ¿Õ×Å²Ã¼ôµÄÌõ¼ş
-    return (sdPlayer == 0 ? vlWhite : vlBlack) > NULLOKAY_MARGIN;
-  }
-  bool NullSafe(void) const {              // ¿Õ×Å²Ã¼ô¿ÉÒÔ²»¼ìÑéµÄÌõ¼ş
-    return (sdPlayer == 0 ? vlWhite : vlBlack) > NULLSAFE_MARGIN;
-  }
-  bool IsDraw(void) const {                // ºÍÆåÅĞ¶Ï
-    return (!PreEval.bPromotion && (dwBitPiece & BOTH_BITPIECE(ATTACK_BITPIECE)) == 0) ||
-        -LastMove().CptDrw >= DRAW_MOVES || nMoveNum == MAX_MOVE_NUM;
-  }
-  int RepStatus(int nRecur = 1) const;     // ÖØ¸´¾ÖÃæ¼ì²â
-  int DrawValue(void) const {              // ºÍÆåµÄ·ÖÖµ
-    return (nDistance & 1) == 0 ? -DRAW_VALUE : DRAW_VALUE;
-  }
-  int RepValue(int vlRep) const {          // ÖØ¸´¾ÖÃæµÄ·ÖÖµ
-    // return vlRep == REP_LOSS ? nDistance - MATE_VALUE : vlRep == REP_WIN ? MATE_VALUE - nDistance : DrawValue();
-    // ³¤½«ÅĞ¸ºµÄ·ÖÖµ£¬µÍÓÚBAN_VALUE½«²»Ğ´ÈëÖÃ»»±í(²ÎÔÄ"hash.cpp")
-    return vlRep == REP_LOSS ? nDistance - BAN_VALUE : vlRep == REP_WIN ? BAN_VALUE - nDistance : DrawValue();
-  }
-  int Material(void) const {               // ×ÓÁ¦Æ½ºâ£¬°üÀ¨ÏÈĞĞÈ¨ÒòËØ
-    return SIDE_VALUE(sdPlayer, vlWhite - vlBlack) + PreEval.vlAdvanced;
-  }
+    SlideMaskStruct *RankMaskPtr(int x, int y) const
+    {
+        return PreGen.smsRankMaskTab[x - FILE_LEFT] + wBitRanks[y];
+    }
+    SlideMaskStruct *FileMaskPtr(int x, int y) const
+    {
+        return PreGen.smsFileMaskTab[y - RANK_TOP] + wBitFiles[x];
+    }
 
-  // ×Å·¨Éú³É¹ı³Ì£¬ÓÉÓÚÕâĞ©¹ı³Ì´úÂëÁ¿ÌØ±ğ´ó£¬ËùÒÔ°ÑËûÃÇ¶¼¼¯ÖĞÔÚ"genmoves.cpp"ÖĞ
-  bool Protected(int sd, int sqSrc, int sqExcept = 0) const; // Æå×Ó±£»¤ÅĞ¶Ï
-  int ChasedBy(int mv) const;                                // ×½ÄÄ¸ö×Ó
-  int MvvLva(int sqDst, int pcCaptured, int nLva) const;     // ¼ÆËãMVV(LVA)Öµ
-  int GenCapMoves(MoveStruct *lpmvs) const;                  // ³Ô×Ó×Å·¨Éú³ÉÆ÷
-  int GenNonCapMoves(MoveStruct *lpmvs) const;               // ²»³Ô×Ó×Å·¨Éú³ÉÆ÷
-  int GenAllMoves(MoveStruct *lpmvs) const {                 // È«²¿×Å·¨Éú³ÉÆ÷
-    int nCapNum;
-    nCapNum = GenCapMoves(lpmvs);
-    return nCapNum + GenNonCapMoves(lpmvs + nCapNum);
-  }
+    // æ£‹ç›˜å¤„ç†è¿‡ç¨‹
+    void ClearBoard(void)
+    { // æ£‹ç›˜åˆå§‹åŒ–
+        sdPlayer = 0;
+        memset(ucpcSquares, 0, 256);
+        memset(ucsqPieces, 0, 48);
+        zobr.InitZero();
+        dwBitPiece = 0;
+        memset(wBitRanks, 0, 16 * sizeof(uint16_t));
+        memset(wBitFiles, 0, 16 * sizeof(uint16_t));
+        vlWhite = vlBlack = 0;
+        // "ClearBoard()"åé¢ç´§è·Ÿçš„æ˜¯"SetIrrev()"ï¼Œæ¥åˆå§‹åŒ–å…¶å®ƒæˆå‘˜
+    }
+    void ChangeSide(void)
+    { // äº¤æ¢èµ°æ£‹æ–¹
+        sdPlayer = OPP_SIDE(sdPlayer);
+        zobr.Xor(PreGen.zobrPlayer);
+    }
+    void SaveStatus(void)
+    { // ä¿å­˜çŠ¶æ€
+        RollbackStruct *lprbs;
+        lprbs = rbsList + nMoveNum;
+        lprbs->zobr = zobr;
+        lprbs->vlWhite = vlWhite;
+        lprbs->vlBlack = vlBlack;
+    }
+    void Rollback(void)
+    { // å›æ»š
+        RollbackStruct *lprbs;
+        lprbs = rbsList + nMoveNum;
+        zobr = lprbs->zobr;
+        vlWhite = lprbs->vlWhite;
+        vlBlack = lprbs->vlBlack;
+    }
+    void AddPiece(int sq, int pc, bool bDel = false); // æ£‹ç›˜ä¸Šå¢åŠ æ£‹å­
+    int MovePiece(int mv);                            // ç§»åŠ¨æ£‹å­
+    void UndoMovePiece(int mv, int pcCaptured);       // æ’¤æ¶ˆç§»åŠ¨æ£‹å­
+    int Promote(int sq);                              // å‡å˜
+    void UndoPromote(int sq, int pcCaptured);         // æ’¤æ¶ˆå‡å˜
 
-  // ×Å·¨Éú³É¹ı³Ì£¬ÓÉÓÚÕâĞ©¹ı³Ì´úÂëÁ¿ÌØ±ğ´ó£¬ËùÒÔ°ÑËûÃÇ¶¼¼¯ÖĞÔÚ"preeval.cpp"ºÍ"evaluate.cpp"ÖĞ
-  void PreEvaluate(void);
-  int AdvisorShape(void) const;
-  int StringHold(void) const;
-  int RookMobility(void) const;
-  int KnightTrap(void) const;
-  int Evaluate(int vlAlpha, int vlBeta) const;
+    // ç€æ³•å¤„ç†è¿‡ç¨‹
+    bool MakeMove(int mv);   // æ‰§è¡Œä¸€ä¸ªç€æ³•
+    void UndoMakeMove(void); // æ’¤æ¶ˆä¸€ä¸ªç€æ³•
+    void NullMove(void);     // æ‰§è¡Œä¸€ä¸ªç©ºç€
+    void UndoNullMove(void); // æ’¤æ¶ˆä¸€ä¸ªç©ºç€
+    void SetIrrev(void)
+    {                            // æŠŠå±€é¢è®¾æˆâ€œä¸å¯é€†â€ï¼Œå³æ¸…é™¤å›æ»šç€æ³•
+        rbsList[0].mvs.dwmv = 0; // wmv, Chk, CptDrw, ChkChs = 0
+        rbsList[0].mvs.ChkChs = CheckedBy();
+        nMoveNum = 1;
+        nDistance = 0;
+        memset(ucRepHash, 0, REP_HASH_MASK + 1);
+    }
+
+    // å±€é¢å¤„ç†è¿‡ç¨‹
+    void FromFen(const char *szFen); // FENä¸²è¯†åˆ«
+    void ToFen(char *szFen) const;   // ç”ŸæˆFENä¸²
+    void Mirror(void);               // å±€é¢é•œåƒ
+
+    // ç€æ³•æ£€æµ‹è¿‡ç¨‹
+    bool GoodCap(int mv) const
+    { // å¥½çš„åƒå­ç€æ³•æ£€æµ‹ï¼Œè¿™æ ·çš„ç€æ³•ä¸è®°å½•åˆ°å†å²è¡¨å’Œæ€æ‰‹ç€æ³•è¡¨ä¸­
+        int pcMoved, pcCaptured;
+        pcCaptured = ucpcSquares[DST(mv)];
+        if (pcCaptured == 0)
+        {
+            return false;
+        }
+        if (!Protected(OPP_SIDE(sdPlayer), DST(mv)))
+        {
+            return true;
+        }
+        pcMoved = ucpcSquares[SRC(mv)];
+        return SIMPLE_VALUE(pcCaptured) > SIMPLE_VALUE(pcMoved);
+    }
+    bool LegalMove(int mv) const;            // ç€æ³•åˆç†æ€§æ£€æµ‹ï¼Œä»…ç”¨åœ¨â€œæ€æ‰‹ç€æ³•â€çš„æ£€æµ‹ä¸­
+    int CheckedBy(bool bLazy = false) const; // è¢«å“ªä¸ªå­å°†å†›
+    bool IsMate(void);                       // åˆ¤æ–­æ˜¯å·²è¢«å°†æ­»
+    MoveStruct LastMove(void) const
+    { // å‰ä¸€æ­¥ç€æ³•ï¼Œè¯¥ç€æ³•ä¿å­˜äº†å±€é¢çš„å°†å†›çŠ¶æ€
+        return rbsList[nMoveNum - 1].mvs;
+    }
+    bool CanPromote(void) const
+    { // åˆ¤æ–­æ˜¯å¦èƒ½å‡å˜
+        return (wBitPiece[sdPlayer] & PAWN_BITPIECE) != PAWN_BITPIECE && LastMove().ChkChs <= 0;
+    }
+    bool NullOkay(void) const
+    { // å…è®¸ä½¿ç”¨ç©ºç€è£å‰ªçš„æ¡ä»¶
+        return (sdPlayer == 0 ? vlWhite : vlBlack) > NULLOKAY_MARGIN;
+    }
+    bool NullSafe(void) const
+    { // ç©ºç€è£å‰ªå¯ä»¥ä¸æ£€éªŒçš„æ¡ä»¶
+        return (sdPlayer == 0 ? vlWhite : vlBlack) > NULLSAFE_MARGIN;
+    }
+    bool IsDraw(void) const
+    { // å’Œæ£‹åˆ¤æ–­
+        return (!PreEval.bPromotion && (dwBitPiece & BOTH_BITPIECE(ATTACK_BITPIECE)) == 0) ||
+               -LastMove().CptDrw >= DRAW_MOVES || nMoveNum == MAX_MOVE_NUM;
+    }
+    int RepStatus(int nRecur = 1) const; // é‡å¤å±€é¢æ£€æµ‹
+    int DrawValue(void) const
+    { // å’Œæ£‹çš„åˆ†å€¼
+        return (nDistance & 1) == 0 ? -DRAW_VALUE : DRAW_VALUE;
+    }
+    int RepValue(int vlRep) const
+    { // é‡å¤å±€é¢çš„åˆ†å€¼
+        // return vlRep == REP_LOSS ? nDistance - MATE_VALUE : vlRep == REP_WIN ? MATE_VALUE - nDistance : DrawValue();
+        // é•¿å°†åˆ¤è´Ÿçš„åˆ†å€¼ï¼Œä½äºBAN_VALUEå°†ä¸å†™å…¥ç½®æ¢è¡¨(å‚é˜…"hash.cpp")
+        return vlRep == REP_LOSS ? nDistance - BAN_VALUE : vlRep == REP_WIN ? BAN_VALUE - nDistance
+                                                                            : DrawValue();
+    }
+    int Material(void) const
+    { // å­åŠ›å¹³è¡¡ï¼ŒåŒ…æ‹¬å…ˆè¡Œæƒå› ç´ 
+        return SIDE_VALUE(sdPlayer, vlWhite - vlBlack) + PreEval.vlAdvanced;
+    }
+
+    // ç€æ³•ç”Ÿæˆè¿‡ç¨‹ï¼Œç”±äºè¿™äº›è¿‡ç¨‹ä»£ç é‡ç‰¹åˆ«å¤§ï¼Œæ‰€ä»¥æŠŠä»–ä»¬éƒ½é›†ä¸­åœ¨"genmoves.cpp"ä¸­
+    bool Protected(int sd, int sqSrc, int sqExcept = 0) const; // æ£‹å­ä¿æŠ¤åˆ¤æ–­
+    int ChasedBy(int mv) const;                                // æ‰å“ªä¸ªå­
+    int MvvLva(int sqDst, int pcCaptured, int nLva) const;     // è®¡ç®—MVV(LVA)å€¼
+    int GenCapMoves(MoveStruct *lpmvs) const;                  // åƒå­ç€æ³•ç”Ÿæˆå™¨
+    int GenNonCapMoves(MoveStruct *lpmvs) const;               // ä¸åƒå­ç€æ³•ç”Ÿæˆå™¨
+    int GenAllMoves(MoveStruct *lpmvs) const
+    { // å…¨éƒ¨ç€æ³•ç”Ÿæˆå™¨
+        int nCapNum;
+        nCapNum = GenCapMoves(lpmvs);
+        return nCapNum + GenNonCapMoves(lpmvs + nCapNum);
+    }
+
+    // ç€æ³•ç”Ÿæˆè¿‡ç¨‹ï¼Œç”±äºè¿™äº›è¿‡ç¨‹ä»£ç é‡ç‰¹åˆ«å¤§ï¼Œæ‰€ä»¥æŠŠä»–ä»¬éƒ½é›†ä¸­åœ¨"preeval.cpp"å’Œ"evaluate.cpp"ä¸­
+    void PreEvaluate(void);
+    int AdvisorShape(void) const;
+    int StringHold(void) const;
+    int RookMobility(void) const;
+    int KnightTrap(void) const;
+    int Evaluate(int vlAlpha, int vlBeta) const;
 }; // pos
 
 #endif
