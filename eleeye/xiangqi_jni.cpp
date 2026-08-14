@@ -1,3 +1,4 @@
+#define MODULE_TAG "Xiangqi_JNI"
 #include <jni.h>
 #include <android/log.h>
 #include <string.h>
@@ -6,6 +7,11 @@
 #include "position.h"
 #include "search.h"
 #include "hash.h" // ← 加上这个，NewHash 就有了
+#include "book_common.h"
+#include "book_endgame_normalizer.h"
+
+// 外部函数声明 book_manager.cpp中定义专门为引擎残局命中用的
+extern "C" bool InternalQueryBookHit(const char *);
 
 bool g_useBook = true;             // 默认开局库开启
 static char g_bookPath[1024] = ""; // ★ 全局存路径
@@ -22,6 +28,8 @@ struct SearchOutput
     char ponderText[256];
     char scoreStr[128] = "";
     char mateStr[128];
+    int bookHit = 0;
+    char searchmodeStr[256];
 };
 
 static void InitEngine()
@@ -72,13 +80,15 @@ static bool ResetSearch(const char *fenStr)
     strncpy(Search.szBookFile, g_bookPath, sizeof(Search.szBookFile) - 1); // ★ 这行必须加！
     Search.szBookFile[sizeof(Search.szBookFile) - 1] = '\0';               // 防止字符串操作会越界读内存，可能崩溃或读取垃圾数据
     Search.bUseBook = g_useBook;                                           // 开局库开关由 JNI 接口控制（唯一开关）
-    Search.mvPonder = 0;                                                   // bug: 如果不清零，会导致 ponder 数据残留混乱，出现错误的着法
+    Search.mvPonder = 0;
+    Search.bookHit = 0;
     ClearHash();
     return true;
 }
 
 static void DoSearch(const char *fenStr, int depth, SearchOutput *out)
 {
+
     // 清零/清空输出
     memset(out, 0, sizeof(SearchOutput));
 
@@ -87,14 +97,22 @@ static void DoSearch(const char *fenStr, int depth, SearchOutput *out)
         snprintf(out->result, sizeof(out->result), "Error: empty FEN");
         return;
     }
-
-    SearchMain(depth);
+    if (InternalQueryBookHit(fenStr)) // ========== 残局书流氓拦截 ==========Start
+    {
+        LOGE("残局命中!");
+        Search.bookHit = 1;
+    }
+    else
+    {
+        SearchMain(depth);
+    }
 
     out->score = Search.nScore;
     out->mv = Search.mvResult;
     out->ponderMv = Search.mvPonder;
+    out->bookHit = Search.bookHit;
 
-    snprintf(out->scoreStr, sizeof(out->scoreStr), "score=%d", out->score);
+    snprintf(out->scoreStr, sizeof(out->scoreStr), "score:%d", out->score);
 
     if (out->mv > 0)
     {
@@ -107,12 +125,11 @@ static void DoSearch(const char *fenStr, int depth, SearchOutput *out)
         int toRank = 9 - (s[3] - '0'); // 坐标转换
 
         snprintf(out->bestmoveStr, sizeof(out->bestmoveStr),
-                 "bestmove(%d,%d,%d,%d)",
+                 "bestmove:%d%d%d%d",
                  fromRank, fromFile, toRank, toFile);
     }
-    // 删除search.cpp:line729 Search.nScore=100; 这行，改用 nNodes 来判断是否开局库着法,更合理，避免误判。
-    bool isBookMove = (Search.nNodes == 0);
-    if (isBookMove && out->ponderMv > 0)
+    // 删除search.cpp:line729 Search.nScore=100; 这行，改用 bookHit 来判断是否开局库着法,更合理，避免误判。
+    if (out->bookHit == 1 && out->ponderMv > 0)
     {
         uint32_t pcoord = MOVE_COORD(out->ponderMv);
         // FIXME: 依赖小端序，严格别名违规。以后可改用位移拆字节。
@@ -122,7 +139,17 @@ static void DoSearch(const char *fenStr, int depth, SearchOutput *out)
         int ptoFile = ps[2] - 'a';
         int ptoRank = 9 - (ps[3] - '0');
         snprintf(out->ponderText, sizeof(out->ponderText),
-                 "\nponder(%d,%d,%d,%d)", pfromRank, pfromFile, ptoRank, ptoFile);
+                 "ponder:%d%d%d%d", pfromRank, pfromFile, ptoRank, ptoFile);
+    }
+
+    if (out->bookHit == 1)
+    {
+        // 开局库命中
+        snprintf(out->searchmodeStr, sizeof(out->searchmodeStr), "MODE:BOOKHIT");
+    }
+    else
+    {
+        snprintf(out->searchmodeStr, sizeof(out->searchmodeStr), "MODE:SEARCH");
     }
 
     // 杀棋判断
@@ -131,21 +158,19 @@ static void DoSearch(const char *fenStr, int depth, SearchOutput *out)
         int moves = (10000 - out->score) / 2;
         if (moves <= 0)
             moves = 1;
-        snprintf(out->mateStr, sizeof(out->mateStr), "%s方 %d 步杀！", Search.pos.sdPlayer == 0 ? "红" : "黑", moves);
-        __android_log_print(ANDROID_LOG_ERROR, "XiangqiJNI", "sdPlayer = %d", Search.pos.sdPlayer);
+        snprintf(out->mateStr, sizeof(out->mateStr), "mate:R/%d", moves);
     }
     else if (out->score <= -9960)
     {
         int moves = (10000 + out->score) / 2;
         if (moves <= 0)
             moves = 1;
-        snprintf(out->mateStr, sizeof(out->mateStr), "%s方 %d 步杀！", Search.pos.sdPlayer == 1 ? "红" : "黑", moves);
-        __android_log_print(ANDROID_LOG_ERROR, "XiangqiJNI", "sdPlayer = %d", Search.pos.sdPlayer);
+        snprintf(out->mateStr, sizeof(out->mateStr), "mate:B/%d", moves);
     }
 
     if (out->mv <= 0)
     {
-        snprintf(out->mateStr, sizeof(out->mateStr), "无合法着法，被绝杀！");
+        snprintf(out->mateStr, sizeof(out->mateStr), "mate:%s/0", Search.pos.sdPlayer ? "B" : "R"); // 0:已经绝杀
     }
 }
 
@@ -154,7 +179,7 @@ Java_com_example_chinesechessspectator_engine_ElephantEye_nativeVersion(JNIEnv *
 {
     return env->NewStringUTF("ElephantEye v3.32 (象眼引擎) \n "
                              "Original: 象棋百科全书网 (xqbase.com) \n "
-                             "Android Port: 廖延贤 (github.com/DavidLeoBJ) \n "
+                             "Android Port: 乐意傲 (github.com/DavidLeoBJ) \n "
                              "License: LGPL v2.1 \n "
                              "Built: " __DATE__ " " __TIME__);
 }
@@ -172,7 +197,7 @@ Java_com_example_chinesechessspectator_engine_ElephantEye_nativeSearch(
 
     if (out.bestmoveStr[0] == '\0')
     {
-        snprintf(out.result, sizeof(out.result), "无合法着法，被绝杀!");
+        snprintf(out.result, sizeof(out.result), "mate:%s/0", Search.pos.sdPlayer ? "B" : "R");
         env->ReleaseStringUTFChars(fen, fenStr);
         return env->NewStringUTF(out.result);
     }
@@ -183,12 +208,19 @@ Java_com_example_chinesechessspectator_engine_ElephantEye_nativeSearch(
 
     if (out.ponderText[0] != '\0')
     {
+        strncat(out.result, ",", sizeof(out.result) - strlen(out.result) - 1);
         strncat(out.result, out.ponderText, sizeof(out.result) - strlen(out.result) - 1);
     }
 
     if (out.mateStr[0] != '\0')
     {
+        strncat(out.result, ",", sizeof(out.result) - strlen(out.result) - 1);
         strncat(out.result, out.mateStr, sizeof(out.result) - strlen(out.result) - 1);
+    }
+    if (out.searchmodeStr[0] != '\0')
+    {
+        strncat(out.result, ",", sizeof(out.result) - strlen(out.result) - 1);
+        strncat(out.result, out.searchmodeStr, sizeof(out.result) - strlen(out.result) - 1);
     }
 
     env->ReleaseStringUTFChars(fen, fenStr);
@@ -211,6 +243,11 @@ Java_com_example_chinesechessspectator_engine_ElephantEye_nativeEvaluate(
         strncat(out.scoreStr, out.mateStr, sizeof(out.scoreStr) - strlen(out.scoreStr) - 1);
     }
 
+    if (out.searchmodeStr[0] != '\0')
+    {
+        strncat(out.scoreStr, ",", sizeof(out.scoreStr) - strlen(out.scoreStr) - 1);
+        strncat(out.scoreStr, out.searchmodeStr, sizeof(out.scoreStr) - strlen(out.scoreStr) - 1);
+    }
     env->ReleaseStringUTFChars(fen, fenStr);
     return env->NewStringUTF(out.scoreStr);
 }
@@ -228,7 +265,7 @@ Java_com_example_chinesechessspectator_engine_ElephantEye_nativeSearchAndEvaluat
 
     if (out.bestmoveStr[0] == '\0')
     {
-        snprintf(out.result, sizeof(out.result), "无合法着法，被绝杀!");
+        snprintf(out.result, sizeof(out.result), "mate:%s/0", Search.pos.sdPlayer ? "B" : "R");
         env->ReleaseStringUTFChars(fen, fenStr);
         return env->NewStringUTF(out.result);
     }
@@ -239,14 +276,21 @@ Java_com_example_chinesechessspectator_engine_ElephantEye_nativeSearchAndEvaluat
 
     if (out.ponderText[0] != '\0')
     {
+        strncat(out.result, ",", sizeof(out.result) - strlen(out.result) - 1);
         strncat(out.result, out.ponderText, sizeof(out.result) - strlen(out.result) - 1);
     }
-
+    strncat(out.result, ",", sizeof(out.result) - strlen(out.result) - 1);
     strncat(out.result, out.scoreStr, sizeof(out.result) - strlen(out.result) - 1);
 
     if (out.mateStr[0] != '\0')
     {
+        strncat(out.result, ",", sizeof(out.result) - strlen(out.result) - 1);
         strncat(out.result, out.mateStr, sizeof(out.result) - strlen(out.result) - 1);
+    }
+    if (out.searchmodeStr[0] != '\0')
+    {
+        strncat(out.result, ",", sizeof(out.result) - strlen(out.result) - 1);
+        strncat(out.result, out.searchmodeStr, sizeof(out.result) - strlen(out.result) - 1);
     }
 
     env->ReleaseStringUTFChars(fen, fenStr);
@@ -264,9 +308,10 @@ Java_com_example_chinesechessspectator_engine_ElephantEye_nativeSetBookPath(
     env->ReleaseStringUTFChars(path, pathStr);
 }
 
-extern "C" JNIEXPORT void JNICALL
+extern "C" JNIEXPORT bool JNICALL
 Java_com_example_chinesechessspectator_engine_ElephantEye_nativeSetBookEnabled(
     JNIEnv *env, jobject obj, jboolean enabled)
 {
     g_useBook = (enabled == JNI_TRUE);
+    return g_useBook;
 }

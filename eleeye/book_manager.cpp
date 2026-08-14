@@ -3,6 +3,7 @@
 #include "book_common.h"
 #include "book_endgame_normalizer.h"
 #include "position.h"
+#include "search.h" //为了让查询结果写到Search.pos中，拼装结果，并在引擎中调用
 #include "pregen.h"
 #include <algorithm>
 #include <android/log.h>
@@ -12,6 +13,14 @@
 #include <mutex>
 #include <unistd.h> // 声明fsync函数
 #include <vector>
+
+#include <fstream>
+#include <queue>
+#include <unordered_set>
+#include <cstdint>
+
+#include "pregen.h" // 提供 extern ZobristStruct zobrTable[14][256]; extern ZobristStruct zobrPlayer;
+
 #define LOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, MODULE_TAG, __VA_ARGS__)
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, MODULE_TAG, __VA_ARGS__)
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, MODULE_TAG, __VA_ARGS__)
@@ -34,8 +43,6 @@ std::string g_bookPath;
 std::vector<BookEntry> g_entries;
 bool g_loaded = false;
 std::mutex g_mutex; // 全局锁定义
-
-#include "pregen.h" // 提供 extern ZobristStruct zobrTable[14][256]; extern ZobristStruct zobrPlayer;
 
 // 声明全局对象（pregen.cpp 里定义了，这里 extern 引用）
 extern PreGenStruct PreGen;
@@ -114,7 +121,7 @@ uint32_t fenToLock1(const char *fen)
 // 内部调用打开Book
 bool internalOpenBook()
 {
-    // ✅ 核心保护：已经加载过了，直接返回，绝不再读磁盘
+    // 核心保护：已经加载过了，直接返回，绝不再读磁盘
     if (g_loaded)
     {
         return true;
@@ -140,7 +147,7 @@ bool internalOpenBook()
         g_entries.push_back(e);
     }
     fclose(f);
-    g_loaded = true; // ✅ 标记已加载，后续再调用直接跳过
+    g_loaded = true; // 标记已加载，后续再调用直接跳过
 
     std::sort(g_entries.begin(), g_entries.end(),
               [](const BookEntry &a, const BookEntry &b)
@@ -294,7 +301,7 @@ bool internalSaveBook()
         LOGE("internalSaveBook: fopen failed! errno=%d", errno);
         return false;
     }
-    // ✅ 禁用文件缓冲，写操作直接落盘
+    // 禁用文件缓冲，写操作直接落盘
     setvbuf(f, nullptr, _IONBF, 0);
 
     size_t written = 0;
@@ -308,13 +315,67 @@ bool internalSaveBook()
         written++;
     }
 
-    // ✅ 强制刷到磁盘（Android缓冲的坑就在这）
+    // 强制刷到磁盘（Android缓冲的坑就在这）
     fflush(f);
     fsync(fileno(f));
 
     long fileSize = ftell(f);
     fclose(f);
     return true;
+}
+
+// ======================== 内部残局命中函数 (专供引擎调用) ==========================Start
+// 因为这里有g_entries，引擎中没有
+#ifdef __cplusplus
+extern "C"
+#endif
+    bool InternalQueryBookHit(const char *rawFen)
+{
+    if (!rawFen || !g_loaded)
+        return false;
+
+    PositionStruct tmp;
+    std::string stdFen = EndgameNormalizer::normalizeFenForEndgame(rawFen);
+    parseFenForEndgame(stdFen.c_str(), tmp);
+
+    auto r = std::equal_range(g_entries.begin(), g_entries.end(),
+                              BookEntry{tmp.zobr.dwLock1, 0, 0},
+                              [](auto &a, auto &b)
+                              { return a.dwZobristLock < b.dwZobristLock; });
+    if (r.first == r.second)
+        return false;
+
+    Search.mvResult = r.first->wmv;
+    Search.nScore = 0;  //
+    Search.bookHit = 1; // 开局库命中的唯一标志
+    return true;
+}
+
+static uint32_t GetBookHash(const char *rawFen, bool *isOpening)
+{
+    PositionStruct p;
+
+    // 开局先试
+    p.FromFen(rawFen);
+    uint32_t hOpen = p.zobr.dwLock1;
+
+    auto r = std::equal_range(g_entries.begin(), g_entries.end(),
+                              BookEntry{hOpen, 0, 0},
+                              [](const BookEntry &a, const BookEntry &b)
+                              {
+                                  return a.dwZobristLock < b.dwZobristLock;
+                              });
+    if (r.first != r.second)
+    {
+        *isOpening = true;
+        return hOpen;
+    }
+
+    // 残局兜底
+    std::string s = EndgameNormalizer::normalizeFenForEndgame(rawFen);
+    parseFenForEndgame(s.c_str(), p);
+    *isOpening = false;
+    return p.zobr.dwLock1;
 }
 
 // ============================================================
@@ -336,44 +397,11 @@ extern "C"
             internalOpenBook();
         }
 
-        PositionStruct pos; // ✅ 在函数开头统一声明pos，所有分支都能访问
-
-        // 1. 判断是否为残局（简单规则，后续可优化）
-        bool isEndgame = false;
-        int redPieceCount = 0;
-        const char *p = cfen;
-        while (*p && *p != ' ')
-        {
-            if (*p >= 'A' && *p <= 'Z')
-            {
-                redPieceCount++;
-            }
-            p++;
-        }
-        // 残局特征：红方子力≤5个，或红兵出现在黑方半场（前5行）
-        if (redPieceCount <= 5 || strstr(cfen, "P3/") || strstr(cfen, "P4/") ||
-            strstr(cfen, "P5/"))
-        {
-            isEndgame = true;
-        }
-
-        // 2. 残局用无校验解析器，开局用原版解析器（核心改动）
-        if (isEndgame)
-        {
-            std::string stdFen = EndgameNormalizer::normalizeFenForEndgame(
-                cfen); // 加命名空间前缀 // 残局同质化处理
-            parseFenForEndgame(stdFen.c_str(),
-                               pos); // ✅ 使用无校验简易解析器，彻底解禁子力限制
-            LOGE("ENDGAME_QUERY: hash=0x%08X", pos.zobr.dwLock1);
-        }
-        else
-        {
-            pos.FromFen(cfen);                                    // ✅ 使用原版解析器，完全兼容现有开局库
-            LOGE("OPENING_QUERY: hash=0x%08X", pos.zobr.dwLock1); // 加这行，验证是否生效
-        }
+        bool isOpening = false;
+        uint32_t hash = GetBookHash(cfen, &isOpening);
+        LOGE(isOpening ? "OPENING HIT" : "FALLBACK ENDGAME");
 
         // 3. 后面的查库逻辑完全不用改（复用原有代码，不丢成果）
-        uint32_t hash = pos.zobr.dwLock1;
         BookEntry key{hash, 0, 0};
         auto range = std::equal_range(g_entries.begin(), g_entries.end(), key,
                                       [](const BookEntry &a, const BookEntry &b)
@@ -406,91 +434,47 @@ extern "C"
             sqToJava(dstSq, toY, toX);
             if (!result.empty())
             {
-                result += ";";
+                result += ",";
             }
-            result += std::to_string(fromY) + "," + std::to_string(fromX) + "," +
-                      std::to_string(toY) + "," + std::to_string(toX) + "," +
+            result += std::to_string(fromY) + std::to_string(fromX) +
+                      std::to_string(toY) + std::to_string(toX) + "/" +
                       std::to_string(it->wvl);
         }
-        result += ";";
 
         env->ReleaseStringUTFChars(fen, cfen);
         return env->NewStringUTF(result.c_str());
     }
 
-    // ---- 设置着法权重 ----
     extern "C" JNIEXPORT jboolean JNICALL
     Java_com_example_chinesechessspectator_engine_BookManager_nativeSetBookWeight(
-        JNIEnv *env, jclass, jstring fen, jint fromY, jint fromX, jint toY,
-        jint toX, jint weight)
+        JNIEnv *env, jclass, jstring fen, jint fy, jint fx, jint ty, jint tx, jint weight)
     {
-
-        if (!internalOpenBook())
-            return JNI_FALSE;
-
-        if (!g_loaded)
-            return JNI_FALSE;
-
         const char *cfen = env->GetStringUTFChars(fen, nullptr);
-        if (!cfen)
-            return JNI_FALSE;
+        if (!g_loaded)
+            internalOpenBook();
 
         PositionStruct pos;
         pos.FromFen(cfen);
-        CalcZobrist(pos);
-        uint32_t hashOrig = pos.zobr.dwLock1;
+        uint32_t hash = pos.zobr.dwLock1;
 
-        int sqSrc = javaToSq(fromY, fromX);
-        int sqDst = javaToSq(toY, toX);
+        int engY = 9 - fy;
+        int engX = fx;
+        int sqSrc = SQ(engY, engX) + 0x33;
+        int sqDst = SQ(9 - ty, tx) + 0x33;
         uint16_t wmv = (uint16_t)((sqDst << 8) | sqSrc);
 
-        std::lock_guard<std::mutex> lock(g_mutex);
-
-        // 1. 先查 H_orig
-        BookEntry key{hashOrig, 0, 0};
-        auto range = std::equal_range(g_entries.begin(), g_entries.end(), key,
-                                      [](const BookEntry &a, const BookEntry &b)
-                                      {
-                                          return a.dwZobristLock < b.dwZobristLock;
-                                      });
-
-        for (auto it = range.first; it != range.second; ++it)
+        std::lock_guard<std::mutex> lk(g_mutex);
+        for (auto &e : g_entries)
         {
-            if (it->wmv == wmv)
+            if (e.dwZobristLock == hash && e.wmv == wmv)
             {
-                it->wvl = (uint16_t)weight;
+                e.wvl = weight;
+                internalSaveBook(); // 只在这里写
                 env->ReleaseStringUTFChars(fen, cfen);
                 return JNI_TRUE;
             }
         }
 
-        // 2. H_orig 没找到 → 镜像查 H_mirror，改那里的
-        PositionStruct posMirror = pos;
-        posMirror.Mirror();
-        CalcZobrist(posMirror);
-        uint32_t hashMirror = posMirror.zobr.dwLock1;
-        uint16_t wmvMirrored = MOVE_MIRROR(wmv);
-
-        BookEntry keyMirror{hashMirror, 0, 0};
-        auto rangeMirror =
-            std::equal_range(g_entries.begin(), g_entries.end(), keyMirror,
-                             [](const BookEntry &a, const BookEntry &b)
-                             {
-                                 return a.dwZobristLock < b.dwZobristLock;
-                             });
-
-        for (auto it = rangeMirror.first; it != rangeMirror.second; ++it)
-        {
-            if (it->wmv == wmvMirrored)
-            {
-                it->wvl = (uint16_t)weight;
-                env->ReleaseStringUTFChars(fen, cfen);
-                internalSaveBook();
-                return JNI_TRUE;
-            }
-        }
-
-        // 3. 都没找到 → 不 insert，返回 false（不允许往 H_orig 里写）
         env->ReleaseStringUTFChars(fen, cfen);
         return JNI_FALSE;
     }
@@ -510,9 +494,9 @@ extern "C"
             env->DeleteLocalRef(local);
         }
 
-        // ✅ 新增1：预初始化Zobrist表（两个cpp共享，只做一次）
+        // 预初始化Zobrist表（两个cpp共享，只做一次）
         PreGenInit();
-        // ✅ 新增2：预加载开局库（只加载一次，后续查询/插入不用再加载）
+        // 预加载开局库（只加载一次，后续查询/插入不用再加载）
         if (!g_loaded)
         {
             g_loaded = internalOpenBook();
@@ -522,7 +506,7 @@ extern "C"
         return JNI_VERSION_1_6;
     }
 
-    // ✅ 新增3：卸载时清理全局资源，无副作用
+    // so被卸载时清理全局资源，无副作用（但这种场景很难出现）
     extern "C" JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved)
     {
         JNIEnv *env;
@@ -535,11 +519,11 @@ extern "C"
             env->DeleteGlobalRef(g_intArrayCls);
             g_intArrayCls = nullptr;
         }
-        // 卸载前保存一次，避免数据丢失
-        if (g_loaded)
-        {
-            internalSaveBook();
-        }
+        // 卸载前保存一次，避免数据丢失|不要这样做，并不安全
+        // if (g_loaded)
+        // {
+        //     internalSaveBook();
+        // }
     }
 
     extern "C" JNIEXPORT void JNICALL
@@ -576,7 +560,7 @@ extern "C"
         std::string stdFen =
             EndgameNormalizer::normalizeFenForEndgame(cfen); // 残局同质化质化处理
 
-        // ✅ 用残局专用解析器，替换原来的pos.FromFen(cfen);
+        // 用残局专用解析器，替换原来的pos.FromFen(cfen);
         PositionStruct pos;
         if (!parseFenForEndgame(stdFen.c_str(), pos))
         {
@@ -584,23 +568,6 @@ extern "C"
             env->ReleaseStringUTFChars(fen, cfen);
             return JNI_FALSE;
         }
-
-        // // ✅ 在解析FEN之后，计算hash之前，先找到红帅和黑将的位置
-        // int redKingSq = 0, blackKingSq = 0;
-        // for (int sq = 0; sq < 256; sq++) {
-        //     if (pos.ucpcSquares[sq] == 1) {    // 红帅的编码是1
-        //         redKingSq = sq;
-        //     } else if (pos.ucpcSquares[sq] == 17) { // 黑将的编码是17
-        //         blackKingSq = sq;
-        //     }
-        // }
-
-        // // 然后再校验
-        // if (redKingSq == 0 || blackKingSq == 0) {
-        //     LOGE("FAIL: Missing king after parsing!");
-        //     env->ReleaseStringUTFChars(fen, cfen);
-        //     return JNI_FALSE;
-        // }
 
         // 计算hash（parseFenForEndgame已经算过了，这里直接用）
         uint32_t hashOrig = pos.zobr.dwLock1;
@@ -638,14 +605,14 @@ extern "C"
         {
             // 着法不存在：插入新记录
             BookEntry e{hashOrig, wmv, 1};
-            // ✅ 新增：计算有序插入位置（按Zobrist哈希排序，和加载时的规则完全一致）
+            // 计算有序插入位置（按Zobrist哈希排序，和加载时的规则完全一致）
             auto insertIt =
                 std::lower_bound(g_entries.begin(), g_entries.end(), e,
                                  [](const BookEntry &a, const BookEntry &b)
                                  {
                                      return a.dwZobristLock < b.dwZobristLock;
                                  });
-            // ✅ 修改：用有序位置插入，代替原来的`range.second`
+            // 用有序位置插入，代替原来的`range.second`
             g_entries.insert(insertIt, e);
         }
 
@@ -653,15 +620,6 @@ extern "C"
         internalSaveBook();
 
         env->ReleaseStringUTFChars(fen, cfen);
-        return JNI_TRUE;
-    }
-
-    // 对外暴露导出，待完善
-    extern "C" JNIEXPORT jboolean JNICALL
-    Java_com_example_chinesechessspectator_engine_BookManager_nativeExportBook(
-        JNIEnv *env, jclass, jstring exportPath)
-    {
-        // 把当前内存里的g_entries写到exportPath，不影响原有的g_bookPath
         return JNI_TRUE;
     }
 
