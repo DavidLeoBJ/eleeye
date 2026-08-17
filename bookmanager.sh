@@ -28,6 +28,8 @@ INCS="-Ieleeye -Ieleeye/Position -Ieleeye/Search"
 # -DCCHESS_A3800 -Wl,-s,--soname,libeleeye_engine.so"
 FLAGS="-shared -static-libstdc++ -fno-exceptions -fno-rtti -fPIC -std=c++17 -O2 \
 -DCCHESS_A3800 -Wl,-s -Wl,--soname,libeleeye_engine.so"
+# -DCCHESS_A3800：如果代码中定义了这个宏ifdefined(#ifdef)，那么在编译时会自动包含一些代码，比如一些常量定义等。
+# -DCCHESS_A3800：如果代码中不定义这个宏if not defined(#ifndef)，那么在编译时不会包含一些代码。
 # -fno-exceptions:关异常可减几百k
 # -fno-rtti:关运行时类型信息可进一步减小尺寸
 # Wl,xxx→ 告诉 clang：把 xxx原样丢给 linker (ld)

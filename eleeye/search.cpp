@@ -38,7 +38,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "book_endgame_normalizer.h"
 
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, MODULE_TAG, __VA_ARGS__)
-
+uint16_t g_rawPv[32] = {0};   // 用于保存pv
 char g_jniRootFen[128] = {0}; // 残局引入开局库命中逻辑
 
 const int IID_DEPTH = 2;       // 内部迭代加深的深度
@@ -1018,6 +1018,7 @@ void SearchMain(int nDepth)
 #ifdef CCHESS_A3800
     Search.mvResult = Search2.wmvPvLine[0];
     Search.nScore = vlLast;
+    SinkRawPv(); // 保存pv提供给原子搜索使用
 #else
     // 12. 输出最佳着法及其最佳应对(作为后台思考的猜测着法)
     if (Search2.wmvPvLine[0] != 0)
@@ -1063,4 +1064,91 @@ void SearchMain(int nDepth)
     printf("\n");
     fflush(stdout);
 #endif
+}
+
+extern "C"
+{
+    int g_base = 0;   // 上一次原始搜索的深度，因此要在原始搜索中修改这个变量
+    int g_revise = 0; // 用户滑块值（默认 0），在用户界面是是深度增减
+    int g_cnt = 0;    // 当前搜索的深度
+    void mv4(uint16_t mv, char *buf)
+    {
+        uint32_t pcoord = MOVE_COORD(mv);
+        // FIXME: 依赖小端序，严格别名违规。以后可改用位移拆字节。
+        char *ps = (char *)&pcoord;
+        int pfromFile = ps[0] - 'a';
+        int pfromRank = 9 - (ps[1] - '0');
+        int ptoFile = ps[2] - 'a';
+        int ptoRank = 9 - (ps[3] - '0');
+        snprintf(buf, 5, "%d%d%d%d", pfromRank, pfromFile, ptoRank, ptoFile);
+    }
+    // 初始化搜索，用于原子搜索引用
+    void NextStep_Init(int depth)
+    {
+        g_base = depth;
+        g_cnt = 0;
+        g_revise = 0;
+    }
+    // 递进搜索，原子深度搜索，允许用户滑块值调整搜索深度，确保搜索结果的准确性
+    // 这样做的好处：之前如果见到杀提前拦截避免前面见到杀，下一步搜索又无杀的bug。另外，引擎自动维护局面，不需要java层再传递fen。
+    void NextStep_Refresh()
+    {
+        if (Search2.wmvPvLine[0])
+        {
+            Search.pos.MakeMove(Search2.wmvPvLine[0]);
+            // LOGE("g_cnt=%d, len=%d, g_base=%d,g_revise=%d,depth=%d\n", g_cnt, NextStep_GetPvCount(), g_base, g_revise, g_base + g_revise - g_cnt);
+            //  并不从缓存中取着法，而是要进行原深度搜索，搜索后的结果保存到Search中，胶水中的OutPut函数会自动处理结果。注意不进行深度递减，那是退化搜索。
+            SearchMain(fmax(1, g_base + g_revise));
+            g_cnt++; // 在原子搜索中复位，在NextStep模式计数，用它来计算绝杀步数
+            return;
+        }
+        g_cnt = 0;
+    }
+
+    // 直接去获取着法,index从0开始，最高32
+    uint16_t NextStep_GetPv(int index)
+    {
+        return index < 32 ? Search2.wmvPvLine[index] : 0;
+    }
+
+    /* 递进搜索，基于原子直接取着法直到只有一个着法再进行深度递减搜索
+     *  这个函数追求的是速度牺牲了搜索质量，但随着局面的递进自动地简化，速度并不是问题，引擎首先要确保精度。而且这是在用户认为当前深度/速度是可以接受的情况下进行的。
+     *  所以要放弃这个函数。
+     */
+    void NextStep_GetnextPv()
+    {
+        int len = NextStep_GetPvCount();
+        // 如果引擎原子搜索还有至少两个着法，则不需要搜索，继续直接取着法
+        if (len >= 2) //(Search2.wmvPvLine[g_cnt] != 0 && Search2.wmvPvLine[g_cnt + 1] != 0)
+        {
+            Search.pos.MakeMove(Search2.wmvPvLine[g_cnt]);
+            g_cnt++; // 在原子搜索中复位，在NextStep模式计数，用它来计算绝杀步数
+            // 从缓存中获取最佳走法.g_cnt++之前的着法已经被原子搜索或上一次递进搜索取走，再取就是重复的。
+            Search.mvResult = NextStep_GetPv(g_cnt);
+            LOGE("g_cnt=%d, len=%d, g_base=%d,g_revise=%d,depth=%d\n", g_cnt, len, g_base, g_revise, g_base + g_revise - g_cnt);
+        }
+        else
+        {
+            SearchMain(fmax(1, g_base + g_revise));
+            g_cnt = 0;
+        }
+    }
+
+    // 获取着法数量最高32
+    int NextStep_GetPvCount()
+    {
+        int pvNumber = 0;
+        while (Search2.wmvPvLine[pvNumber] && pvNumber < 32)
+            pvNumber++;
+        return pvNumber;
+    }
+
+    void SinkRawPv()
+    {
+        for (int i = 0; i < 32; i++)
+        {
+            g_rawPv[i] = Search2.wmvPvLine[i]; // 没货自动拷0
+            LOGE("g_rawPv[%d]=%d", i, g_rawPv[i]);
+        }
+    }
 }

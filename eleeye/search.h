@@ -77,6 +77,25 @@ void PopLeaf(PositionStruct &pos);
 // 搜索的启动过程
 void SearchMain(int nDepth);
 
-extern bool g_useBook; // JNI 层控制的全局开关
-
+#ifdef __cplusplus
+extern "C"
+{
 #endif
+    extern bool g_useBook; // JNI 层控制的全局开关
+
+    // ===== NextStep 门面（A3800 专用，零 extern）=====
+    extern int g_base;           // 原子搜索深度，必须要在原始搜索中修改
+    extern int g_revise;         // 用户滑块值（默认 0），在用户界面是是深度增减（置信度与速度的权衡微调）
+    extern int g_cnt;            // 当前搜索的深度
+    extern uint16_t g_rawPv[32]; // 原始搜索的着法序列
+    void SinkRawPv();            // 将原子搜索生成pv序列保存到全局变量g_rawPv中
+    void mv4(uint16_t mv, char *buf);
+    void NextStep_Init(int depth);
+    uint16_t NextStep_GetPv(int index);
+    int NextStep_GetPvCount();
+    void NextStep_Refresh();
+    void NextStep_GetnextPv();
+#ifdef __cplusplus
+}
+#endif
+#endif // End of SEARCH_H
