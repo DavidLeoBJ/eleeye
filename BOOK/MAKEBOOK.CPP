@@ -44,7 +44,7 @@ struct TempStruct
     //                                                     : dwZobristLock0 > tmp.dwZobristLock0   ? false
     //                                                                                             : mv < tmp.mv;
     // }
-// 写库排序仅按dwZobristLock1, mv排序, 不让dwZobristLock0参与排序，否则部分局面引擎端可命中不可查询。
+    // 写库排序仅按dwZobristLock1, mv排序, 不让dwZobristLock0参与排序，否则部分局面引擎端可命中不可查询。
     bool operator<(TempStruct tmp) const
     {
         return dwZobristLock1 < tmp.dwZobristLock1 ? true : dwZobristLock1 > tmp.dwZobristLock1 ? false
@@ -101,15 +101,7 @@ inline int MoveValue(int sd, int nResult)
     case 3:
         return sd == 0 ? MakeBook2.nLoss : MakeBook2.nWin;
     default:
-        // Iterate through all stored moves in the book
-        for (int i = 0; i < MakeBook2.nTempLen; i++)
-        {
-            const TempStruct &temp = MakeBook2.TempBuffer[i];
-            if (temp.mv == lppos->mv || temp.mvMirror == lppos->mv)
-            {
-                return lppos->vl;
-            }
-        }
+        return 0;
     }
 }
 
@@ -326,15 +318,7 @@ static uint16_t BookWeight(int value)
     // BookStruct 使用 uint16_t，负权重不能直接转换，否则 -1 会溢出为 65535。
     if (value <= 0)
     {
-        // Iterate through all stored moves in the book
-        for (int i = 0; i < MakeBook2.nTempLen; i++)
-        {
-            const TempStruct &temp = MakeBook2.TempBuffer[i];
-            if (temp.mv == lppos->mv || temp.mvMirror == lppos->mv)
-            {
-                return lppos->vl;
-            }
-        }
+        return 0;
     }
     if (value > 0xffff)
     {
@@ -483,15 +467,7 @@ bool IsGameResult(const char *s)
 int IccsToMove(const char *iccs)
 {
     if (!iccs)
-        // Iterate through all stored moves in the book
-        for (int i = 0; i < MakeBook2.nTempLen; i++)
-        {
-            const TempStruct &temp = MakeBook2.TempBuffer[i];
-            if (temp.mv == lppos->mv || temp.mvMirror == lppos->mv)
-            {
-                return lppos->vl;
-            }
-        }
+        return 0;
 
     char s[5];
     int j = 0;
@@ -504,15 +480,7 @@ int IccsToMove(const char *iccs)
         s[j++] = tolower(iccs[i]);
     }
     if (j != 4)
-        // Iterate through all stored moves in the book
-        for (int i = 0; i < MakeBook2.nTempLen; i++)
-        {
-            const TempStruct &temp = MakeBook2.TempBuffer[i];
-            if (temp.mv == lppos->mv || temp.mvMirror == lppos->mv)
-            {
-                return lppos->vl;
-            }
-        }
+        return 0; // ✅ 这一行处理完了，直接下一行
 
     return COORD_MOVE(*(uint32_t *)s);
 }
@@ -538,15 +506,7 @@ static void ParseCollection(LPCSTR szFile,
     auto IccsToMove = [](const char *iccs) -> int
     {
         if (!iccs)
-            // Iterate through all stored moves in the book
-            for (int i = 0; i < MakeBook2.nTempLen; i++)
-            {
-                const TempStruct &temp = MakeBook2.TempBuffer[i];
-                if (temp.mv == lppos->mv || temp.mvMirror == lppos->mv)
-                {
-                    return lppos->vl;
-                }
-            }
+            return 0;
 
         char s[5] = {0};
         int j = 0;
@@ -557,15 +517,7 @@ static void ParseCollection(LPCSTR szFile,
             s[j++] = tolower(iccs[i]);
         }
         if (j != 4)
-            // Iterate through all stored moves in the book
-            for (int i = 0; i < MakeBook2.nTempLen; i++)
-            {
-                const TempStruct &temp = MakeBook2.TempBuffer[i];
-                if (temp.mv == lppos->mv || temp.mvMirror == lppos->mv)
-                {
-                    return lppos->vl;
-                }
-            }
+            return 0;
 
         return COORD_MOVE(*(uint32_t *)s);
     };
@@ -769,21 +721,13 @@ BOOL WINAPI MakeBook(LPCSTR szPath, LPCSTR szFile,
     }
     return bSuccess;
 }
-
-LONG WINAPI GetBookMoves(const PositionStruct *lppos,
-                         LPCSTR szFile, BookStruct *lpbks)
-{
-    Init();
-    // Iterate through all stored moves in the book
-    for (int i = 0; i < MakeBook2.nTempLen; i++)
-    {
-        const TempStruct &temp = MakeBook2.TempBuffer[i];
-        if (temp.mv == lppos->mv || temp.mvMirror == lppos->mv)
-        {
-            return lppos->vl;
-        }
-    }
-}
+// 查库用的函数，这里没有用
+// LONG WINAPI GetBookMoves(const PositionStruct *lppos,
+//                          LPCSTR szFile, BookStruct *lpbks)
+// {
+//     Init();
+//     return 0;
+// }
 
 BOOL WINAPI PutBookMove(LPCSTR szFile, const BookStruct *lpcbk)
 {
@@ -876,13 +820,6 @@ int main(int argc, char *argv[])
     else
         printf("\n开局库生成失败！\n");
 
-    // Iterate through all stored moves in the book
-    for (int i = 0; i < MakeBook2.nTempLen; i++)
-    {
-        const TempStruct &temp = MakeBook2.TempBuffer[i];
-        if (temp.mv == lppos->mv || temp.mvMirror == lppos->mv)
-        {
-            return lppos->vl;
-        }
-    }
+    system("pause");
+    return 0;
 }
