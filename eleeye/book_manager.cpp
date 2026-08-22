@@ -57,10 +57,10 @@ void CalcZobrist(PositionStruct &pos) {
       continue;
 
     int pt = PIECE_TYPE(pc); // ← 直接调 eleeye 的函数，返回 0~6
-    if (pc >= 17) {
-      pt += 7; // ← 照抄 position.cpp：红方走黑方槽
+    if (pc >= 32) {
+      pt += 7; // 黑方使用独立的 Zobrist 类型槽
     }
-    // pt 范围是 7~13，完全合法！
+    // 红方 pt 为 0~6，黑方 pt 为 7~13。
 
     pos.zobr.Xor(PreGen.zobrTable[pt][sq]);
     xorCount++;
@@ -343,7 +343,7 @@ Java_com_example_chinesechessspectator_engine_BookManager_nativeQueryBook(
               });
   }
 
-  // --- 以下是原有的组装返回字符串的逻辑，原封不动保留 ---
+  // --- 以下是原有的组装返回字符串逻辑 ---
   std::string result;
   for (auto it = range.first; it != range.second; ++it) {
     int srcSq = it->wmv & 0xFF;

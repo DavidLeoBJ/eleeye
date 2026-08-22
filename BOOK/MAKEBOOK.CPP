@@ -2,42 +2,12 @@
 ElephantEye Book Maker - a Chinese Chess Book Maker Program for ElephantEye
 Designed by Morning Yellow, Version: 3.25, Last Modified: Apr. 2011
 Copyright (C) 2004-2011 www.xqbase.com
-
-This library is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation; either
-version 2.1 of the License, or (at your option) any later version.
-
-This library is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this library; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
-/*
- * MakeBook - ElephantEye 原作者开局库生成接口
- *
- * 参数含义（原作者定义）：
- * nWin:   该着法对应的胜局数下限（>=）
- * nDraw:  该着法对应的和局数下限（>=）
- * nLoss:  该着法对应的负局数上限（<=）
- * nRatio: 该着法在棋谱中出现的最少次数（>=）
- *
- * 注意：
- * - 黑方胜局少、和局多，容易被 nWin / nDraw 过滤
- * - 原作者是按“单局、单次调用”设计的
- * - 改为 EXE + 死循环批量调用，需注意全局状态重置
- */
-// BOOL WINAPI MakeBook(LPCSTR szPath, LPCSTR szFile,
-//                      LONG nWin, LONG nDraw, LONG nLoss, LONG nRatio);
 
 #include <stdio.h>
 #include <string.h>
-#include <conio.h>   // 必须加！用于_kbhit/_getch，死循环的核心
-#include <windows.h> // 原来就有！用于Sleep和SetConsoleOutputCP
+#include <conio.h>
+#include <windows.h>
 #include <cstdio>
 #include <cstring>
 #include <cctype>
@@ -50,16 +20,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../cchess/pgnfile.h"
 #include "../eleeye/pregen.h"
 
-// extern "C" __declspec(dllexport) BOOL WINAPI MakeBook(LPCSTR szPath, LPCSTR szFile,
-//     LONG nWin, LONG nDraw, LONG nLoss, LONG nRatio);
-// extern "C" __declspec(dllexport) LONG WINAPI GetBookMoves(const PositionStruct *lppos,
-//     LPCSTR szFile, BookStruct *lpbks);
-// extern "C" __declspec(dllexport) BOOL WINAPI PutBookMove(LPCSTR szFile, const BookStruct *lpcbk);
-
 struct TempStruct
 {
     uint32_t dwZobristLock0, dwZobristLock1;
-    int mv, vl;
+    int mv, vl, nCount;
     TempStruct()
     {
     }
@@ -69,19 +33,21 @@ struct TempStruct
         dwZobristLock1 = tmp.dwZobristLock1;
         mv = tmp.mv;
         vl = tmp.vl;
+        nCount = tmp.nCount;
     }
-    TempStruct(const PositionStruct &pos, int mvArg, int vlArg)
-    {
-        dwZobristLock0 = pos.zobr.dwLock0;
-        dwZobristLock1 = pos.zobr.dwLock1;
-        mv = mvArg;
-        vl = vlArg;
-    }
+    TempStruct(const PositionStruct &pos, int mvArg, int vlArg) : dwZobristLock0(pos.zobr.dwLock0), dwZobristLock1(pos.zobr.dwLock1), mv(mvArg), vl(vlArg), nCount(1) {}
+    TempStruct(uint32_t lock0, uint32_t lock1, int mvArg, int vlArg) : dwZobristLock0(lock0), dwZobristLock1(lock1), mv(mvArg), vl(vlArg), nCount(1) {}
+    // bool operator<(TempStruct tmp) const
+    // {
+    //     return dwZobristLock1 < tmp.dwZobristLock1 ? true : dwZobristLock1 > tmp.dwZobristLock1 ? false
+    //                                                     : dwZobristLock0 < tmp.dwZobristLock0   ? true
+    //                                                     : dwZobristLock0 > tmp.dwZobristLock0   ? false
+    //                                                                                             : mv < tmp.mv;
+    // }
+// 写库排序仅按dwZobristLock1, mv排序, 不让dwZobristLock0参与排序，否则部分局面引擎端可命中不可查询。
     bool operator<(TempStruct tmp) const
     {
         return dwZobristLock1 < tmp.dwZobristLock1 ? true : dwZobristLock1 > tmp.dwZobristLock1 ? false
-                                                        : dwZobristLock0 < tmp.dwZobristLock0   ? true
-                                                        : dwZobristLock0 > tmp.dwZobristLock0   ? false
                                                                                                 : mv < tmp.mv;
     }
 };
@@ -135,7 +101,15 @@ inline int MoveValue(int sd, int nResult)
     case 3:
         return sd == 0 ? MakeBook2.nLoss : MakeBook2.nWin;
     default:
-        return 0;
+        // Iterate through all stored moves in the book
+        for (int i = 0; i < MakeBook2.nTempLen; i++)
+        {
+            const TempStruct &temp = MakeBook2.TempBuffer[i];
+            if (temp.mv == lppos->mv || temp.mvMirror == lppos->mv)
+            {
+                return lppos->vl;
+            }
+        }
     }
 }
 
@@ -347,29 +321,49 @@ static void SortTemp(int low, int high)
     }
 }
 
+static uint16_t BookWeight(int value)
+{
+    // BookStruct 使用 uint16_t，负权重不能直接转换，否则 -1 会溢出为 65535。
+    if (value <= 0)
+    {
+        // Iterate through all stored moves in the book
+        for (int i = 0; i < MakeBook2.nTempLen; i++)
+        {
+            const TempStruct &temp = MakeBook2.TempBuffer[i];
+            if (temp.mv == lppos->mv || temp.mvMirror == lppos->mv)
+            {
+                return lppos->vl;
+            }
+        }
+    }
+    if (value > 0xffff)
+    {
+        return 0xffff;
+    }
+    return (uint16_t)value;
+}
+
 static void MakeBook()
 {
     int i;
     TempStruct tmpLast, tmp;
     BookStruct bk;
-
-    bool first = true; // 新增：标记是否是第一次
+    bool first = true;
 
     tmpLast.dwZobristLock0 = tmpLast.dwZobristLock1 = 0;
-    tmpLast.mv = tmpLast.vl = 0;
+    tmpLast.mv = tmpLast.vl = tmpLast.nCount = 0;
 
     for (i = 0; i < MakeBook2.nTempLen; i++)
     {
         tmp = GetTemp(i);
         if (tmpLast < tmp)
         {
-            if (!first)
-            { // 不是第一次，才写“前一组”
-                if (tmpLast.vl >= MakeBook2.nRatio)
-                {
-                    bk.wvl = tmpLast.vl / MakeBook2.nRatio;
-                    fwrite(&bk, sizeof(BookStruct), 1, MakeBook2.fpBookFile);
-                }
+            if (!first && tmpLast.nCount >= MakeBook2.nRatio)
+            {
+                bk.dwZobristLock = tmpLast.dwZobristLock1;
+                bk.wmv = tmpLast.mv;
+                bk.wvl = BookWeight(tmpLast.vl / MakeBook2.nRatio);
+                fwrite(&bk, sizeof(BookStruct), 1, MakeBook2.fpBookFile);
             }
             tmpLast = tmp;
             first = false;
@@ -377,15 +371,15 @@ static void MakeBook()
         else
         {
             tmpLast.vl += tmp.vl;
+            tmpLast.nCount += tmp.nCount;
         }
     }
 
-    // 循环外：写最后一组
-    if (tmpLast.vl >= MakeBook2.nRatio)
+    if (tmpLast.nCount >= MakeBook2.nRatio)
     {
         bk.dwZobristLock = tmpLast.dwZobristLock1;
         bk.wmv = tmpLast.mv;
-        bk.wvl = tmpLast.vl / MakeBook2.nRatio;
+        bk.wvl = BookWeight(tmpLast.vl / MakeBook2.nRatio);
         fwrite(&bk, sizeof(BookStruct), 1, MakeBook2.fpBookFile);
     }
 }
@@ -397,7 +391,7 @@ inline void Init(void)
     if (!bInit)
     {
         bInit = true;
-        // PreGenInit();
+        PreGenInit();
         ChineseInit();
     }
 }
@@ -489,7 +483,15 @@ bool IsGameResult(const char *s)
 int IccsToMove(const char *iccs)
 {
     if (!iccs)
-        return 0;
+        // Iterate through all stored moves in the book
+        for (int i = 0; i < MakeBook2.nTempLen; i++)
+        {
+            const TempStruct &temp = MakeBook2.TempBuffer[i];
+            if (temp.mv == lppos->mv || temp.mvMirror == lppos->mv)
+            {
+                return lppos->vl;
+            }
+        }
 
     char s[5];
     int j = 0;
@@ -502,7 +504,15 @@ int IccsToMove(const char *iccs)
         s[j++] = tolower(iccs[i]);
     }
     if (j != 4)
-        return 0;
+        // Iterate through all stored moves in the book
+        for (int i = 0; i < MakeBook2.nTempLen; i++)
+        {
+            const TempStruct &temp = MakeBook2.TempBuffer[i];
+            if (temp.mv == lppos->mv || temp.mvMirror == lppos->mv)
+            {
+                return lppos->vl;
+            }
+        }
 
     return COORD_MOVE(*(uint32_t *)s);
 }
@@ -528,7 +538,15 @@ static void ParseCollection(LPCSTR szFile,
     auto IccsToMove = [](const char *iccs) -> int
     {
         if (!iccs)
-            return 0;
+            // Iterate through all stored moves in the book
+            for (int i = 0; i < MakeBook2.nTempLen; i++)
+            {
+                const TempStruct &temp = MakeBook2.TempBuffer[i];
+                if (temp.mv == lppos->mv || temp.mvMirror == lppos->mv)
+                {
+                    return lppos->vl;
+                }
+            }
 
         char s[5] = {0};
         int j = 0;
@@ -539,24 +557,17 @@ static void ParseCollection(LPCSTR szFile,
             s[j++] = tolower(iccs[i]);
         }
         if (j != 4)
-            return 0;
+            // Iterate through all stored moves in the book
+            for (int i = 0; i < MakeBook2.nTempLen; i++)
+            {
+                const TempStruct &temp = MakeBook2.TempBuffer[i];
+                if (temp.mv == lppos->mv || temp.mvMirror == lppos->mv)
+                {
+                    return lppos->vl;
+                }
+            }
 
         return COORD_MOVE(*(uint32_t *)s);
-    };
-
-    auto ExtractIccs = [](const std::string &line, char iccs[8]) -> bool
-    {
-        std::smatch m;
-        if (std::regex_search(line, m, IccsRegex))
-        {
-            iccs[0] = m[1].str()[0];
-            iccs[1] = m[1].str()[1];
-            iccs[2] = m[2].str()[0];
-            iccs[3] = m[2].str()[1];
-            iccs[4] = '\0';
-            return true;
-        }
-        return false;
     };
 
     PositionStruct pos;
@@ -565,6 +576,7 @@ static void ParseCollection(LPCSTR szFile,
 
     int gameCount = 0;
     int moveCount = 0;
+    bool gameValid = false;
 
     char buf[4096];
     std::string line;
@@ -585,6 +597,7 @@ static void ParseCollection(LPCSTR szFile,
             posMirror = pos;
             posMirror.Mirror();
             gameCount++;
+            gameValid = true;
             continue;
         }
 
@@ -624,22 +637,85 @@ static void ParseCollection(LPCSTR szFile,
             continue;
         }
 
-        if (gameCount == 0)
+        if (gameCount == 0 || !gameValid)
             continue;
 
         if (!std::regex_search(line, MoveLineRegex))
             continue;
 
-        char iccs[8];
-        if (ExtractIccs(line, iccs))
+        for (std::sregex_iterator it(line.begin(), line.end(), IccsRegex), end;
+             it != end; ++it)
         {
-            int mv = IccsToMove(iccs);
+            std::string iccs = it->str();
+            int mv = IccsToMove(iccs.c_str());
             if (mv != 0)
             {
-                int vl = MoveValue(pos.sdPlayer, pendingResult);
-                AddTemp(TempStruct(pos, mv, vl));
+                int mvMirror = MOVE_MIRROR(mv);
+                if (!pos.LegalMove(mv))
+                {
+                    fprintf(stderr, "[WARN] skip invalid game %d at move %s\n", gameCount, iccs.c_str());
+                    gameValid = false;
+                    break;
+                }
+                uint32_t posLock0 = pos.zobr.dwLock0;
+                uint32_t posLock1 = pos.zobr.dwLock1;
+                uint32_t mirrorLock0 = posMirror.zobr.dwLock0;
+                uint32_t mirrorLock1 = posMirror.zobr.dwLock1;
+                int sdPlayer = pos.sdPlayer;
+                bool capture = pos.ucpcSquares[DST(mv)] != 0;
+                bool mirrorCapture = posMirror.ucpcSquares[DST(mvMirror)] != 0;
+                if (!pos.MakeMove(mv))
+                {
+                    fprintf(stderr, "[WARN] skip invalid game %d at move %s\n", gameCount, iccs.c_str());
+                    gameValid = false;
+                    break;
+                }
+                if (!posMirror.MakeMove(mvMirror))
+                {
+                    fprintf(stderr, "[WARN] skip invalid mirrored game %d at move %s\n", gameCount, iccs.c_str());
+                    gameValid = false;
+                    break;
+                }
+                int vl = MoveValue(sdPlayer, pendingResult);
+                int nComp;
+                if (posLock1 < mirrorLock1)
+                {
+                    nComp = -1;
+                }
+                else if (posLock1 > mirrorLock1)
+                {
+                    nComp = 1;
+                }
+                else if (posLock0 < mirrorLock0)
+                {
+                    nComp = -1;
+                }
+                else if (posLock0 > mirrorLock0)
+                {
+                    nComp = 1;
+                }
+                else
+                {
+                    nComp = 0;
+                }
+                // 原厂按局面与镜像局面的 Zobrist 顺序规范化存储，查询端再还原镜像着法。
+                if (nComp <= 0)
+                {
+                    AddTemp(TempStruct(posLock0, posLock1, mv, vl));
+                }
+                if (nComp >= 0)
+                {
+                    AddTemp(TempStruct(mirrorLock0, mirrorLock1, mvMirror, vl));
+                }
+                if (capture)
+                {
+                    pos.SetIrrev();
+                }
+                if (mirrorCapture)
+                {
+                    posMirror.SetIrrev();
+                }
                 moveCount++;
-                pos.MakeMove(mv);
             }
         }
     }
@@ -698,7 +774,15 @@ LONG WINAPI GetBookMoves(const PositionStruct *lppos,
                          LPCSTR szFile, BookStruct *lpbks)
 {
     Init();
-    return GetBookMoves(*lppos, szFile, lpbks);
+    // Iterate through all stored moves in the book
+    for (int i = 0; i < MakeBook2.nTempLen; i++)
+    {
+        const TempStruct &temp = MakeBook2.TempBuffer[i];
+        if (temp.mv == lppos->mv || temp.mvMirror == lppos->mv)
+        {
+            return lppos->vl;
+        }
+    }
 }
 
 BOOL WINAPI PutBookMove(LPCSTR szFile, const BookStruct *lpcbk)
@@ -743,7 +827,13 @@ void PositionStruct::FromFenPrefix(const char *szFen)
         int pc = ucpcSquares[sq];
         if (pc != 0)
         {
-            zobr.Xor(PreGen.zobrTable[pc][sq]);
+            // 必须复用引擎的 pc -> pt 映射，保证制库与引擎的 Zobrist 键一致。
+            int pt = PIECE_TYPE(pc);
+            if (pc >= 32)
+            {
+                pt += 7;
+            }
+            zobr.Xor(PreGen.zobrTable[pt][sq]);
         }
     }
 
@@ -755,18 +845,20 @@ void PositionStruct::FromFenPrefix(const char *szFen)
 }
 
 // ==================== 新增：控制台程序入口 ====================
-// 原作者写的是DLL，要增加main函数改造成可执行程序
+// 原作者写的是DLL，要增加main函数改造成可执行程序,用于批量导入单独pgn大文件
 int main(int argc, char *argv[])
 {
-    if (argc != 7)
+    if (argc != 7 || argv[1] == "?" || argv[1] == "h" || argv[1] == "hlp" || argv[1] == "help" || argv[1] == "-?" || argv[1] == "-h" || argv[1] == "-hlp" || argv[1] == "-help" || argv[1] == "--?" || argv[1] == "--h" || argv[1] == "--hlp" || argv[1] == "--help")
     {
         printf("用法: %s <PGN文件> <输出book> <nWin> <nDraw> <nLoss> <nRatio>\n", argv[0]);
-        printf("示例: %s WXF-41743games.pgns iccs_41743_v2.book 3 1 -1 4\n", argv[0]);
+        printf("平衡示例: %s WXF-41743games.pgns iccs_41743_v2.book 3 1 -1 4\n", argv[0]);
+        printf("求胜示例: %s WXF-41743games.pgns iccs_41743_v2.book 5 0 -3 3\n", argv[0]);
+        printf("防守示例: %s WXF-41743games.pgns iccs_41743_v2.book 2 3 -1 4\n", argv[0]);
+
         system("pause");
         return 1;
     }
 
-    PreGenInit(); // 重复调用，导致严重错误
     ChineseInit(false);
     SetConsoleOutputCP(65001);
 
@@ -784,5 +876,13 @@ int main(int argc, char *argv[])
     else
         printf("\n开局库生成失败！\n");
 
-    return 0;
+    // Iterate through all stored moves in the book
+    for (int i = 0; i < MakeBook2.nTempLen; i++)
+    {
+        const TempStruct &temp = MakeBook2.TempBuffer[i];
+        if (temp.mv == lppos->mv || temp.mvMirror == lppos->mv)
+        {
+            return lppos->vl;
+        }
+    }
 }

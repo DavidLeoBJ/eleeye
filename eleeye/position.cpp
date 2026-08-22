@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../base/base.h"
 #include "pregen.h"
 #include "position.h"
+#include <stdio.h>
 
 /* ElephantEye源程序使用的匈牙利记号约定：
  *
@@ -160,6 +161,12 @@ int PositionStruct::MovePiece(int mv) {
   pcMoved = this->ucpcSquares[sqSrc];
   __ASSERT_SQUARE(sqSrc);
   __ASSERT_SQUARE(sqDst);
+  if (pcMoved < 16 || pcMoved > 47) {
+    fprintf(stderr,
+            "[MOVEPIECE] invalid piece: sd=%d moveNum=%d mv=0x%04x src=0x%02x dst=0x%02x pcMoved=%d pcDst=%d\n",
+            this->sdPlayer, this->nMoveNum, mv, sqSrc, sqDst, pcMoved,
+            this->ucpcSquares[sqDst]);
+  }
   __ASSERT_PIECE(pcMoved);
   pcCaptured = this->ucpcSquares[sqDst];
   if (pcCaptured == 0) {

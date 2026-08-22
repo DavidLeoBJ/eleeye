@@ -94,6 +94,24 @@ int GetBookMoves(const PositionStruct &pos, const char *szBookFile, BookStruct *
   }
   BookFile.Close();
 
+  // 只在查询阶段临时处理严格互为镜像且权重相等的着法，不修改 book 文件。
+  // for (i = 0; i < nMoves; ++i) {
+  //   for (j = i + 1; j < nMoves; ++j) {
+  //     if (lpbks[i].wmv != lpbks[j].wmv &&
+  //         lpbks[i].wvl == lpbks[j].wvl &&
+  //         MOVE_MIRROR(lpbks[i].wmv) == lpbks[j].wmv) {
+  //       int iFile = FILE_X(SRC(lpbks[i].wmv));
+  //       int jFile = FILE_X(SRC(lpbks[j].wmv));
+  //       int preferred = pos.sdPlayer == 0
+  //           ? (iFile > jFile ? i : j)
+  //           : (iFile < jFile ? i : j);
+  //       if (lpbks[preferred].wvl < 0xffff) {
+  //         lpbks[preferred].wvl++;
+  //       }
+  //     }
+  //   }
+  // }
+
   // 6. 对着法按分值排序
   for (i = 0; i < nMoves - 1; i ++) {
     for (j = nMoves - 1; j > i; j --) {
