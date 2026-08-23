@@ -1,4 +1,5 @@
 #!/bin/bash
+# 注意：请在 Git Bash / WSL 中运行，不要在 PowerShell/CMD 直接执行
 # bookmanager.sh — 编译带开局库管理功能的 eleeye engine (arm64-v8a + x86_64)
 # 包含了xiangqi_jni.cpp的所有功能并引入book_manager.cpp的所有功能
 # 已经修改为静态so,总尺寸减小。

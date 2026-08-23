@@ -844,28 +844,28 @@ void SearchMain(int nDepth)
             // 算法：尊重开局库并从中选一个临时设置权重为1：避免除数为0崩溃，同时确保命中。
             if (vl > 0)
             {
-                // ✅ 正常加权随机
+                // ✅ 正常加权随机（原版逻辑完全不动）
                 vl = Search.rc4Random.NextLong() % (uint32_t)vl;
+                for (i = 0; i < nBookMoves; i++)
+                {
+                    vl -= bks[i].wvl;
+                    if (vl < 0)
+                    {
+                        break;
+                    }
+                }
+                __ASSERT(vl < 0);
+                __ASSERT(i < nBookMoves);
             }
             else
             {
-                // ✅ 权重全为0：公平随机选一个
+                // ✅ 权重全为0：公平随机选一个，直接定位，不进加权循环
+                // 不用改bks的wvl（改内存没必要，还可能踩只读区的坑）
                 i = Search.rc4Random.NextLong() % nBookMoves;
-                // ✅ 临时把选中着法的权重设为1，让原逻辑无缝继续
-                bks[i].wvl = 1;
-                // 重新计算总权重（此时只有这一个为1）
-                vl = 1;
+                // 这里不需要重新算vl，后面直接用选中的wmv即可
             }
-            for (i = 0; i < nBookMoves; i++)
-            {
-                vl -= bks[i].wvl;
-                if (vl < 0)
-                {
-                    break;
-                }
-            }
-            __ASSERT(vl < 0);
-            __ASSERT(i < nBookMoves);
+            // __ASSERT(vl < 0);
+            // __ASSERT(i < nBookMoves);
             // c. 如果开局库中的着法够成循环局面，那么不走这个着法
             Search.pos.MakeMove(bks[i].wmv);
             if (Search.pos.RepStatus(3) == 0)

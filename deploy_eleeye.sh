@@ -1,4 +1,6 @@
 #!/bin/bash
+# 注意：请在 Git Bash / WSL 中运行，不要在 PowerShell 直接执行
+# 必须在模拟器（或真机）“系统完全启动 + adb 授权完成”之后才能跑
 # 7件事：①cp，②clean,③assemble,
 # ④uninstall,⑤install,⑥start,⑦adb logcat
 
@@ -17,6 +19,8 @@ set -e
 #########################
 # 基础配置
 #########################
+# 强制使用 Android SDK 的 adb（MSYS / Git Bash 通用）
+export PATH="/c/Users/13012/AppData/Local/Android/Sdk/platform-tools:$PATH"
 ELEEYE_JNILIBS="/d/androidstudioprojects/eleeye/jniLibs"
 AS_JNILIBS="D:/AndroidStudioProjects/ChineseChessSpectator/appb/src/main/jniLibs"
 
