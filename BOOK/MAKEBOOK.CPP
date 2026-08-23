@@ -89,7 +89,7 @@ inline void AddTemp(const TempStruct &tmp)
     SetTemp(MakeBook2.nTempLen, tmp);
     MakeBook2.nTempLen++;
 }
-
+// 根据棋局结果和sdPlayer，计算着法权重
 inline int MoveValue(int sd, int nResult)
 {
     switch (nResult)
@@ -318,7 +318,7 @@ static uint16_t BookWeight(int value)
     // BookStruct 使用 uint16_t，负权重不能直接转换，否则 -1 会溢出为 65535。
     if (value <= 0)
     {
-        return 0;
+        return 1; // 不能给0，给1避免权重均为零引擎计算中出现除数为0的错误
     }
     if (value > 0xffff)
     {
@@ -594,7 +594,7 @@ static void ParseCollection(LPCSTR szFile,
 
         if (!std::regex_search(line, MoveLineRegex))
             continue;
-
+        // 从当前这行字符串的开头到结尾，把所有符合正则式IccsRegex的子串都找出来，挨个处理
         for (std::sregex_iterator it(line.begin(), line.end(), IccsRegex), end;
              it != end; ++it)
         {

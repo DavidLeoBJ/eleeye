@@ -338,13 +338,14 @@ struct PositionStruct
     void UndoMakeMove(void); // 撤消一个着法
     void NullMove(void);     // 执行一个空着
     void UndoNullMove(void); // 撤消一个空着
+    // 设为不可逆。吃子就是不可逆。长将/长捉设为不可逆就变成了禁着
     void SetIrrev(void)
-    {                            // 把局面设成“不可逆”，即清除回滚着法
+    {                            // 把局面设成“不可逆”，即清除回滚着法。rbsList[0]是回滚栈。
         rbsList[0].mvs.dwmv = 0; // wmv, Chk, CptDrw, ChkChs = 0
         rbsList[0].mvs.ChkChs = CheckedBy();
-        nMoveNum = 1;
-        nDistance = 0;
-        memset(ucRepHash, 0, REP_HASH_MASK + 1);
+        nMoveNum = 1;                            // 重置回合数
+        nDistance = 0;                           // 重置深度（用于判长打）
+        memset(ucRepHash, 0, REP_HASH_MASK + 1); // 清空“重复局面哈希表” 以前的局面，不再参与“长打判罚”。
     }
 
     // 局面处理过程
