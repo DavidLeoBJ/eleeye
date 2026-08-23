@@ -840,7 +840,22 @@ void SearchMain(int nDepth)
                 fflush(stdout);
             }
             // b. 根据权重随机选择一个走法
-            vl = Search.rc4Random.NextLong() % (uint32_t)vl;
+            // vl = Search.rc4Random.NextLong() % (uint32_t)vl;// 开局库算法原因生成了所有着法权重为0的情况，这里就炸了，所以要修改如下的if-else块：
+            // 算法：尊重开局库并从中选一个临时设置权重为1：避免除数为0崩溃，同时确保命中。
+            if (vl > 0)
+            {
+                // ✅ 正常加权随机
+                vl = Search.rc4Random.NextLong() % (uint32_t)vl;
+            }
+            else
+            {
+                // ✅ 权重全为0：公平随机选一个
+                i = Search.rc4Random.NextLong() % nBookMoves;
+                // ✅ 临时把选中着法的权重设为1，让原逻辑无缝继续
+                bks[i].wvl = 1;
+                // 重新计算总权重（此时只有这一个为1）
+                vl = 1;
+            }
             for (i = 0; i < nBookMoves; i++)
             {
                 vl -= bks[i].wvl;
