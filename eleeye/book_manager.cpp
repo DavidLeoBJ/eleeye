@@ -389,56 +389,86 @@ extern "C"
     Java_com_example_chinesechessspectator_engine_BookManager_nativeQueryBook(
         JNIEnv *env, jclass, jstring fen)
     {
-
         const char *cfen = env->GetStringUTFChars(fen, nullptr);
-
         if (!g_loaded)
         {
             internalOpenBook();
         }
 
-        bool isOpening = false;
-        uint32_t hash = GetBookHash(cfen, &isOpening);
-        LOGE(isOpening ? "OPENING HIT" : "FALLBACK ENDGAME");
+        // ===== 1. 算规范化 lock1（和生成端 nComp 完全一致）=====
+        PositionStruct pos, posMirror;
+        pos.FromFen(cfen);
+        posMirror = pos;
+        posMirror.Mirror();
 
-        // 3. 后面的查库逻辑完全不用改（复用原有代码，不丢成果）
+        uint64_t curLock1 = pos.zobr.dwLock1;
+        uint64_t mirrorLock1 = posMirror.zobr.dwLock1;
+        uint32_t hash;
+
+        if (curLock1 < mirrorLock1)
+        {
+            hash = (uint32_t)curLock1;
+        }
+        else if (curLock1 > mirrorLock1)
+        {
+            hash = (uint32_t)mirrorLock1;
+        }
+        else
+        {
+            hash = (uint32_t)curLock1;
+        }
+
+        bool hitMirror = (curLock1 > mirrorLock1);
+        // ========================================================
+
+        // ===== 2. 查库 =====
         BookEntry key{hash, 0, 0};
-        auto range = std::equal_range(g_entries.begin(), g_entries.end(), key,
-                                      [](const BookEntry &a, const BookEntry &b)
-                                      {
-                                          return a.dwZobristLock < b.dwZobristLock;
-                                      });
+        auto range = std::equal_range(
+            g_entries.begin(), g_entries.end(), key,
+            [](const BookEntry &a, const BookEntry &b)
+            {
+                return a.dwZobristLock < b.dwZobristLock;
+            });
 
         size_t matchCount = std::distance(range.first, range.second);
 
-        // 按权重wvl降序排序
-        std::vector<BookEntry> sortedMatches(range.first,
-                                             range.second); // 拷贝命中结果到临时容器
+        // ===== 3. 按权重降序排序 =====
+        std::vector<BookEntry> sortedMatches(range.first, range.second);
         if (matchCount > 0)
         {
             std::sort(sortedMatches.begin(), sortedMatches.end(),
                       [](const BookEntry &a, const BookEntry &b)
                       {
-                          return a.wvl > b.wvl; // 权重高的排前面
+                          return a.wvl > b.wvl;
                       });
         }
 
-        // --- 以下是原有的组装返回字符串的逻辑，原封不动保留 ---
-        std::string result;
-        for (auto it = range.first; it != range.second; ++it)
-        {
-            int srcSq = it->wmv & 0xFF;
-            int dstSq = (it->wmv >> 8) & 0xFF;
+        // ===== 4. 组装结果（✅ 正确位置）=====
+        std::string result; // ✅ 必须在循环外
+
+        for (auto &entry : sortedMatches)
+        { // ✅ 遍历排序后的结果
+            int mv = entry.wmv;
+
+            // ✅ 镜像命中，翻回当前侧
+            if (hitMirror)
+            {
+                mv = MOVE_MIRROR(mv);
+            }
+
+            int srcSq = mv & 0xFF;
+            int dstSq = (mv >> 8) & 0xFF;
             int fromY, fromX, toY, toX;
             sqToJava(srcSq, fromY, fromX);
             sqToJava(dstSq, toY, toX);
+
             if (!result.empty())
             {
                 result += ",";
             }
             result += std::to_string(fromY) + std::to_string(fromX) +
                       std::to_string(toY) + std::to_string(toX) + "/" +
-                      std::to_string(it->wvl);
+                      std::to_string(entry.wvl);
         }
 
         env->ReleaseStringUTFChars(fen, cfen);
